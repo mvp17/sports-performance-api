@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}<title>Log In</title>{% endblock %}
+
+{% block register %}
+<div style="margin-top: 20px" >
+    <div class="wrapper fadeInDown">
+        <div id="formContent">
+            <!-- Login Form -->
+            <form method="post">
+                {% csrf_token %}
+                {{ form }}
+                <input type="submit" class="fadeIn fourth" value="ENTRAR">
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
