@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block Title %}<title>CSV Files</title> {% endblock %}
+
+{% block info %}
+    <h1> History CSV Files</h1>
+
+    <p>
+        <a href="{% url 'upload_file' %}" class="btn btn-primary">
+            Upload csv file
+        </a>
+    </p>
+
+    <table class="table mb-0">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Athlete</th>
+            <th>CSV File</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for file in files %}
+            <tr>
+                <td>{{ file.title }}</td>
+                <td>{{ file.athlete }}</td>
+                <td>{{ file.csv }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+
+    </table>
+{% endblock %}

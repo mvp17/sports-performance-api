@@ -1,6 +1,14 @@
 {% extends 'base.html' %}
-{% block title %}<title>Settings</title> {% endblock %}
+{% block Title %}<title>Upload</title> {% endblock %}
 
-{% block informacio %}
+{% block info %}
     <h1> Upload your csv files</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="document">
+        <button type="submit">Upload file</button>
+    </form>
+    {% if url %}
+        <a>Uploaded file: <a href="{{ url }}">{{ url }}</a></a> </p>
+    {% endif %}
 {% endblock %}
