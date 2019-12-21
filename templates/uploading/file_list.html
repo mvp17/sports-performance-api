@@ -3,13 +3,11 @@
 
 {% block info %}
     <h1> History CSV Files</h1>
-
     <p>
         <a href="{% url 'upload_file' %}" class="btn btn-primary">
             Upload csv file
         </a>
     </p>
-
     <table class="table mb-0">
     <thead>
         <tr>
@@ -27,6 +25,5 @@
             </tr>
         {% endfor %}
     </tbody>
-
     </table>
 {% endblock %}

@@ -20,47 +20,47 @@
 <div>
     <div>
         {% block content %}
-                 {% if user.is_authenticated %}
-                            {% block nav %}
-                                    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-                                        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                                            <ul class="navbar-nav mr-auto">
-                                                <li class="nav-item">
-                                                        <a class=" nav-link" href="{% url 'home' %}"> Home</a>
-                                                </li>
+            {% if user.is_authenticated %}
+                {% block nav %}
+                    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+                        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                            <ul class="navbar-nav mr-auto">
+                                <li class="nav-item">
+                                    <a class=" nav-link" href="{% url 'home' %}"> Home</a>
+                                </li>
 
-                                                <li class="nav-item">
-                                                        <a class=" nav-link" href="{% url 'settings' %}"> Settings</a>
-                                                </li>
+                                <li class="nav-item">
+                                    <a class=" nav-link" href="{% url 'settings' %}"> Settings</a>
+                                </li>
 
-                                                <li class="nav-item">
-                                                        <a class=" nav-link" href="{% url 'file_list' %}"> Files</a>
-                                                </li>
+                                <li class="nav-item">
+                                    <a class=" nav-link" href="{% url 'file_list' %}"> Files</a>
+                                </li>
 
-                                                <li class="nav-item">
-                                                        <a class=" nav-link" href="{% url 'data analytics' %}"> Data analytics</a>
-                                                </li>
+                                <li class="nav-item">
+                                    <a class=" nav-link" href="{% url 'data analytics' %}"> Data analytics</a>
+                                </li>
 
-                                                <li class="nav-item">
-                                                        <a class=" nav-link" href="{% url 'variable selector' %}"> Variable selector</a>
-                                                </li>
+                                <li class="nav-item">
+                                    <a class=" nav-link" href="{% url 'variable selector' %}"> Variable selector</a>
+                                </li>
 
-                                                <li class="nav-item">
-                                                        <a class=" nav-link" href="{% url 'line chart' %}"> Line chart</a>
-                                                </li>
-                                            </ul>
-                                            <ul class="navbar-nav margin-right: auto">
-                                                <li class="nav-item">
-                                                    <a class=" nav-link" href="{% url 'logout' %}"> Logout</a>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </nav>
-                            {% endblock %}
-                     {% block info %}
-                         <h1> Welcome home!</h1>
-                     {% endblock %}
-                    {% endif %}
+                                <li class="nav-item">
+                                    <a class=" nav-link" href="{% url 'line chart' %}"> Line chart</a>
+                                </li>
+                            </ul>
+                            <ul class="navbar-nav margin-right: auto">
+                                <li class="nav-item">
+                                    <a class=" nav-link" href="{% url 'logout' %}"> Logout</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </nav>
+                {% endblock %}
+                {% block info %}
+                    <h1> Welcome home!</h1>
+                {% endblock %}
+            {% endif %}
         {% endblock %}
     </div>
 </div>
