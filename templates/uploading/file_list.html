@@ -2,7 +2,7 @@
 {% block Title %}<title>CSV Files</title> {% endblock %}
 
 {% block info %}
-    <h1> History CSV Files</h1>
+
     <p>
         <a href="{% url 'upload_file' %}" class="btn btn-primary">
             Upload csv file
@@ -14,6 +14,7 @@
             <th>Title</th>
             <th>Athlete</th>
             <th>CSV File</th>
+            <th>Delete</th>
         </tr>
     </thead>
     <tbody>
@@ -22,8 +23,15 @@
                 <td>{{ file.title }}</td>
                 <td>{{ file.athlete }}</td>
                 <td>{{ file.csv }}</td>
+                <td>
+                    <form method="post" action="{% url 'delete_file' file.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </td>
             </tr>
         {% endfor %}
     </tbody>
     </table>
+
 {% endblock %}

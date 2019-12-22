@@ -1,17 +1,26 @@
 {% extends 'base.html' %}
 {% block Title %}<title>Log In</title>{% endblock %}
+{% load crispy_forms_tags %}
 
 {% block content %}
-<div style="margin-top: 20px" >
+
+<div style="margin-top: 40px" >
     <div class="wrapper fadeInDown">
         <div id="formContent">
             <!-- Login Form -->
             <form method="post">
                 {% csrf_token %}
-                {{ form }}
-                <input type="submit" class="fadeIn fourth" value="ENTRAR">
+                {{ form|crispy }}
+                <input type="submit" class="fadeIn fourth" value="Log In">
             </form>
+
+            <div class="wrapper fadeInDown" style="margin-top: 20px">
+                <a href="{% url 'signup' %}" class="fadeIn fourth" >
+                    <button class="btn btn-success">Sign Up</button>
+                </a>
+            </div>
         </div>
     </div>
 </div>
+
 {% endblock %}

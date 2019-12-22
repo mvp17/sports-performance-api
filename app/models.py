@@ -8,3 +8,7 @@ class PerformanceData(models.Model):
 
     def __str__(self):
         return self.title
+
+    def delete(self, *args, **kwargs):
+        self.csv.delete()
+        super().delete(*args, **kwargs)

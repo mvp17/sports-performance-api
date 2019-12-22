@@ -4,12 +4,10 @@
     <meta charset="UTF-8">
     {% block Title %} <title>Home</title> {% endblock %}
 
-
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
-
 
      {% load static %}
     <link rel="stylesheet" href="{% static '/style/base.css' %}">
@@ -20,8 +18,10 @@
 <div>
     <div>
         {% block content %}
+
             {% if user.is_authenticated %}
                 {% block nav %}
+
                     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
                         <div class="collapse navbar-collapse" id="navbarSupportedContent">
                             <ul class="navbar-nav mr-auto">
@@ -56,12 +56,18 @@
                             </ul>
                         </div>
                     </nav>
+
                 {% endblock %}
+
                 {% block info %}
+
                     <h1> Welcome home!</h1>
+
                 {% endblock %}
             {% endif %}
+
         {% endblock %}
+
     </div>
 </div>
 

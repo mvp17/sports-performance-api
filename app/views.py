@@ -13,6 +13,13 @@ def configuration(request):
     return render(request, 'settings.html')
 
 
+def delete_file(request, pk):
+    if request.method == 'POST':
+        file = PerformanceData.objects.get(pk=pk)
+        file.delete()
+    return redirect('file_list')
+
+
 class FileList(ListView):
     model = PerformanceData
     template_name = 'uploading/file_list.html'
