@@ -2,36 +2,37 @@
 {% block Title %}<title>CSV Files</title> {% endblock %}
 
 {% block info %}
-
-    <p>
-        <a href="{% url 'upload_file' %}" class="btn btn-primary">
-            Upload csv file
-        </a>
-    </p>
-    <table class="table mb-0">
-    <thead>
-        <tr>
-            <th>Title</th>
-            <th>Athlete</th>
-            <th>CSV File</th>
-            <th>Delete</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for file in files %}
+    <div class="container" style="margin-top: 30px">
+        <p>
+            <a href="{% url 'upload_file' %}" class="btn btn-primary">
+                Upload csv file
+            </a>
+        </p>
+        <table class="table mb-0">
+        <thead>
             <tr>
-                <td>{{ file.title }}</td>
-                <td>{{ file.athlete }}</td>
-                <td>{{ file.csv }}</td>
-                <td>
-                    <form method="post" action="{% url 'delete_file' file.pk %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger">Delete</button>
-                    </form>
-                </td>
+                <th>Title</th>
+                <th>Athlete</th>
+                <th>CSV File</th>
+                <th>Delete</th>
             </tr>
-        {% endfor %}
-    </tbody>
-    </table>
+        </thead>
+        <tbody>
+            {% for file in files %}
+                <tr>
+                    <td>{{ file.title }}</td>
+                    <td>{{ file.athlete }}</td>
+                    <td>{{ file.csv }}</td>
+                    <td>
+                        <form method="post" action="{% url 'delete_file' file.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+        </table>
+    </div>
 
 {% endblock %}

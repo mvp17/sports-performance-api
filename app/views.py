@@ -1,16 +1,19 @@
 from django.shortcuts import render, redirect
-from .forms import FileForm
+from .forms import *
 from django.views.generic import *
 from django.urls import reverse_lazy
-from .models import PerformanceData
+from .models import *
 
 
 def home(request):
     return render(request, 'base.html')
 
 
-def configuration(request):
-    return render(request, 'settings.html')
+class Configuration(CreateView):
+    model = ConfigurationSettings
+    form_class = SettingsForm
+    success_url = reverse_lazy('home')
+    template_name = 'settings.html'
 
 
 def delete_file(request, pk):
