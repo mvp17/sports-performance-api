@@ -1,13 +1,34 @@
-from django.shortcuts import render, redirect
 from .forms import *
 from django.views.generic import *
-from django.urls import reverse_lazy
 from .models import *
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy
+from django.views import generic
+from django.shortcuts import render, redirect
+from django.contrib.auth.forms import UserCreationForm
 
 
 def home(request):
     return render(request, 'base.html')
+
+
+class LogIn(LoginRequiredMixin, generic.CreateView):
+    success_url = reverse_lazy('home')
+    template_name = 'registration/login.html'
+
+
+def signup(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('login')
+    else:
+        form = UserCreationForm()
+    return render(request, 'registration/signup.html', {
+        'form': form
+    })
 
 
 class Configuration(CreateView):

@@ -50,9 +50,14 @@
                                 </li>
                             </ul>
                             <ul class="navbar-nav margin-right: auto">
+                                <li class="nav-item active" >
+                                    <a class="navbar-brand" href="#">{{ user.username }}</a>
+                                </li>
+
                                 <li class="nav-item">
                                     <a class=" nav-link" href="{% url 'logout' %}"> Logout</a>
                                 </li>
+
                             </ul>
                         </div>
                     </nav>
