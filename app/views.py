@@ -3,6 +3,7 @@ from .forms import *
 from django.views.generic import *
 from django.urls import reverse_lazy
 from .models import *
+from django.contrib import messages
 
 
 def home(request):
@@ -29,11 +30,20 @@ class FileList(ListView):
     context_object_name = 'files'
 
 
-class UploadFile(CreateView):
-    model = PerformanceData
-    form_class = FileForm
-    success_url = reverse_lazy('file_list')
-    template_name = 'uploading/upload_file.html'
+def upload_csv_file(request):
+    if request.method == 'POST':
+        form = FileForm(request.POST, request.FILES)
+        csv_file = request.FILES['csv']
+        if form.is_valid() and csv_file.name.endswith('.csv'):
+            form.save()
+            return redirect('file_list')
+        else:
+            messages.error(request, 'Error in parameters (only csv files)')
+    else:
+        form = FileForm()
+    return render(request, 'uploading/upload_file.html', {
+        'form': form
+    })
 
 
 def data_analytics(request):
