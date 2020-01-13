@@ -24,8 +24,8 @@ class PerformanceData(models.Model):
 
 
 class ConfigurationSettings(models.Model):
-    init_frame = models.IntegerField(null=True, blank=True)
-    fin_frame = models.IntegerField(null=True, blank=True)
+    init_frame = models.PositiveIntegerField(null=True, blank=True)
+    fin_frame = models.PositiveIntegerField(null=True, blank=True)
     init_time = models.TimeField(help_text="H:M:S")
     fin_time = models.TimeField(help_text="H:M:S")
 
