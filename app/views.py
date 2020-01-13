@@ -76,4 +76,4 @@ def variable_selector(request):
 
 
 def line_chart(request):
-    return render(request, 'line_chart.html ')
+    return render(request, 'line_chart.html')
