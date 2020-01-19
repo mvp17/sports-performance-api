@@ -27,7 +27,8 @@ SECRET_KEY = '*#_^6a4q#mp0glxd7i!#&v8lu7c(qf15%d4av86r#mbj$fde@^'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['0.0.0.0', 'sports-performance-analyzer.herokuapp.com']
+# DEBUG = False (settings_heroku ?)
+ALLOWED_HOSTS = ['sports-performance-analyzer.herokuapp.com']
 
 
 # Application definition
