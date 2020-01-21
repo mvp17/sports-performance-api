@@ -1,6 +1,54 @@
 {% extends 'base.html' %}
-{% block Title %}<title>Analysis</title> {% endblock %}
+{% block Title %}<title xmlns="">Analysis</title> {% endblock %}
 
 {% block info %}
     <h1> Analyse your sports performance data</h1>
+
+    <div class="container" style="margin-top: 30px">
+        {% for perf_var in perf_vars_list %}
+            <input type="checkbox" class="checks" value={{ perf_var }}> {{ perf_var }}
+        {% endfor %}
+        <button class="btn btn-primary" onclick="getTableValues();"> Save</button>
+
+        <script>
+            function getTableValues() {
+                let checks = document.getElementsByClassName('checks');
+                let str = '';
+
+                for ( let i = 0; i < checks.length; i++ ){
+                    if ( checks[i].checked === true ){
+                        str += checks[i].value + " ";
+                    }
+                }
+                printTableValues(str)
+            }
+        </script>
+        <div class="container" style="margin-top: 15px">
+            <table id="myTable" cellpadding="20" cellspacing="20" border="1"></table>
+                <script>
+                    function printTableValues(str){
+                        let student;
+                        for (let j = 0; j < 10; j++) {
+                            student = {
+                                name: "Name" + j,
+                                rank: "Rank" + j,
+                                stuclass: "Class" + j,
+                            };
+                            let table = document.getElementById("myTable");
+                            let row = table.insertRow(j);
+                            let cell1 = row.insertCell(0);
+                            let cell2 = row.insertCell(1);
+                            let cell3 = row.insertCell(2);
+                            /*
+                            cell1.innerHTML = str;
+                            cell2.innerHTML = student.rank;
+                            cell3.innerHTML = student.stuclass;
+                            */
+                        }
+                    }
+                </script>
+        </div>
+
+    </div>
+
 {% endblock %}

@@ -1,3 +1,5 @@
+import pandas as pd
+
 from .forms import *
 from django.views.generic import *
 from .models import *
@@ -68,11 +70,14 @@ def upload_csv_file(request):
 
 
 def data_analytics(request):
-    return render(request, 'data_analytics.html')
+    objects = PerformanceData.objects.all()
+    performance_variables_to_select = []
 
+    for obj in objects:
+        csv = pd.read_csv(obj.csv.name, ";", header=0)
+        performance_variables_to_select += csv.head(0).columns.values.tolist()
 
-def variable_selector(request):
-    return render(request, 'variable_selector.html')
+    return render(request, 'data_analytics.html', context={'perf_vars_list': performance_variables_to_select})
 
 
 def line_chart(request):
