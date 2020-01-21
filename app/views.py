@@ -70,14 +70,34 @@ def upload_csv_file(request):
 
 
 def data_analytics(request):
-    objects = PerformanceData.objects.all()
-    performance_variables_to_select = []
+    # If no csv files uploaded, error message
+    if PerformanceData.objects.count() == 0:
+        messages.error(request, 'Error: No data to analyse')
+        return render(request, 'data_analytics.html')
+    else:
+        objects = PerformanceData.objects.all()
+        performance_variables_to_select = []
+        render_data = []
 
-    for obj in objects:
-        csv = pd.read_csv(obj.csv.name, ";", header=0)
-        performance_variables_to_select += csv.head(0).columns.values.tolist()
+        for obj in objects:
+            csv = pd.read_csv(obj.csv.name, ";", )
+            performance_variables_to_select += csv.columns.values.tolist()
 
-    return render(request, 'data_analytics.html', context={'perf_vars_list': performance_variables_to_select})
+        for obj in objects:
+            data = {}
+            csv = pd.read_csv(obj.csv.name, ";", )
+            performance_variables = csv.columns.values.tolist()
+
+            for i in performance_variables:
+                data[i] = []
+
+            for row in csv.values.tolist():
+                for (i, j) in zip(row, performance_variables):
+                    data[j].append(i)
+            render_data.append(data)
+
+        return render(request, 'data_analytics.html', context={'perf_vars_list': performance_variables_to_select,
+                                                               'data': render_data})
 
 
 def line_chart(request):
