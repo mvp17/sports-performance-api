@@ -3,4 +3,16 @@
 
 {% block info %}
     <h1> Chart data visualization </h1>
+    <script>
+            function printValues(str) {
+                alert(str);
+                let my_var = '{{ values_each_perf_var }}';
+                for(let i = 0; i < 1; i++){
+                    document.write(my_var[i])
+                }
+
+                //alert(my_var)
+            }
+
+        </script>
 {% endblock %}

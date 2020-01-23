@@ -1,4 +1,5 @@
 import pandas as pd
+# import jsonpickle
 
 from .forms import *
 from django.views.generic import *
@@ -70,7 +71,7 @@ def upload_csv_file(request):
 
 
 def data_analytics(request):
-    # If no csv files uploaded, error message
+    # If no csv files uploaded, error message.
     if PerformanceData.objects.count() == 0:
         messages.error(request, 'Error: No data to analyse')
         return render(request, 'data_analytics.html')
@@ -78,6 +79,9 @@ def data_analytics(request):
         objects = PerformanceData.objects.all()
         performance_variables_to_select = []
         render_data = []
+        vars_perf = []
+        data_values_vars_perf = []
+        values = []
 
         for obj in objects:
             csv = pd.read_csv(obj.csv.name, ";", )
@@ -94,10 +98,23 @@ def data_analytics(request):
             for row in csv.values.tolist():
                 for (i, j) in zip(row, performance_variables):
                     data[j].append(i)
+                # rows for the table. Only for columns of one csv
+                values.append(row)
             render_data.append(data)
 
-        return render(request, 'data_analytics.html', context={'perf_vars_list': performance_variables_to_select,
-                                                               'data': render_data})
+        # for context, data binding.
+        for csv in render_data:
+            for value in csv.keys():
+                # list with name of performance vars.
+                vars_perf.append(value)
+            for value in csv.values():
+                # list of lists, each list with the values of their associated performance var.
+                # values for each column in lists
+                data_values_vars_perf.append(value)
+
+        context = {'perf_vars_list': performance_variables_to_select, 'column_titles': vars_perf,
+                   'values_each_perf_var': data_values_vars_perf, 'values': values}
+        return render(request, 'data_analytics.html', context)
 
 
 def line_chart(request):

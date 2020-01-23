@@ -3,24 +3,24 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+    <div style="margin-top: 40px" >
+        <div class="wrapper fadeInDown">
+            <div id="formContent">
+                <!-- Login Form -->
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <input type="submit" class="fadeIn fourth" value="Log In">
+                </form>
 
-<div style="margin-top: 40px" >
-    <div class="wrapper fadeInDown">
-        <div id="formContent">
-            <!-- Login Form -->
-            <form method="post">
-                {% csrf_token %}
-                {{ form|crispy }}
-                <input type="submit" class="fadeIn fourth" value="Log In">
-            </form>
-
-            <div class="wrapper fadeInDown" style="margin-top: 20px">
-                <a href="{% url 'signup' %}" class="fadeIn fourth" >
-                    <button class="btn btn-success">Sign Up</button>
-                </a>
+                <div class="wrapper fadeInDown" style="margin-top: 20px">
+                    <a href="{% url 'signup' %}" class="fadeIn fourth" >
+                        <button class="btn btn-success">Sign Up</button>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 {% endblock %}
