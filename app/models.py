@@ -10,7 +10,7 @@ class LoadData(models.Model):
 
     CHOICES_BOOL = [(True, "Yes"), (False, "No")]
     event_file = models.BooleanField(null=True, blank=False, help_text="Events file?",
-                                     choices=CHOICES_BOOL, default="Yes")
+                                     choices=CHOICES_BOOL, default=True)
 
     FREQ_1FS = 1
     FREQ_5FS = 5
