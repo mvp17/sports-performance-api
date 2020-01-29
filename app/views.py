@@ -104,7 +104,7 @@ def data_analytics(request):
             for i in performance_variables:
                 data[i] = []
 
-            if obj.event_file:
+            if obj.event_file == 0:
                 for row in csv.values.tolist():
                     for (i, j) in zip(row, performance_variables):
                         data[j].append(i)

@@ -8,9 +8,9 @@ class LoadData(models.Model):
     init_time_ms = models.PositiveIntegerField(null=True, blank=False, help_text="Time in milliseconds")
     fin_time_ms = models.PositiveIntegerField(null=True, blank=False, help_text="Time in milliseconds")
 
-    CHOICES_BOOL = [(True, "Yes"), (False, "No")]
-    event_file = models.BooleanField(null=True, blank=False, help_text="Events file?",
-                                     choices=CHOICES_BOOL, default=(True, "Yes"))
+    CHOICES_BOOL = [(0, "Yes"), (1, "No")]
+    event_file = models.IntegerField(null=True, blank=False, help_text="Events file?",
+                                     choices=CHOICES_BOOL, default=0)
 
     FREQ_1FS = 1
     FREQ_5FS = 5
