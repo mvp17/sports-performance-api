@@ -4,12 +4,13 @@ from .models import *
 
 class FileForm(forms.ModelForm):
     class Meta:
-        model = PerformanceData
-        fields = ('title', 'athlete', 'csv', 'init_frame', 'fin_frame', 'frequency')
+        model = LoadData
+        fields = ('title', 'athlete', 'csv', 'event_file', 'init_time_ms', 'fin_time_ms', 'frequency')
 
 
 class SettingsForm(forms.ModelForm):
     class Meta:
         model = ConfigurationSettings
-        fields = ('init_frame', 'fin_frame', 'frequency')
+        # fields = ('init_time_ms', 'fin_time_ms', 'frequency')
+        fields = ('frequency',)
 

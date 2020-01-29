@@ -2,6 +2,7 @@ import pandas as pd
 # import jsonpickle
 
 from .forms import *
+from itertools import dropwhile
 from django.views.generic import *
 from .models import *
 from django.contrib import messages
@@ -43,13 +44,13 @@ class Configuration(CreateView):
 
 def delete_file(request, pk):
     if request.method == 'POST':
-        file = PerformanceData.objects.get(pk=pk)
+        file = LoadData.objects.get(pk=pk)
         file.delete()
     return redirect('file_list')
 
 
 class FileList(ListView):
-    model = PerformanceData
+    model = LoadData
     template_name = 'uploading/file_list.html'
     context_object_name = 'files'
 
@@ -70,18 +71,26 @@ def upload_csv_file(request):
     })
 
 
+def get_max_freq(objects):
+    frequency = 0
+    for obj in objects:
+        if obj.frequency > frequency:
+            frequency = obj.frequency
+    return frequency
+
+
 def data_analytics(request):
     # If no csv files uploaded, error message.
-    if PerformanceData.objects.count() == 0:
+    if LoadData.objects.count() == 0:
         messages.error(request, 'Error: No data to analyse')
         return render(request, 'data_analytics.html')
     else:
-        objects = PerformanceData.objects.all()
+        objects = LoadData.objects.all()
+        max_frequency = get_max_freq(objects)
         performance_variables_to_select = []
-        render_data = []
-        vars_perf = []
-        data_values_vars_perf = []
-        values = []
+        there_is_event_file = False
+        # devices_files_data = []
+        new_csv_dict = {}
 
         for obj in objects:
             csv = pd.read_csv(obj.csv.name, ";", )
@@ -95,26 +104,75 @@ def data_analytics(request):
             for i in performance_variables:
                 data[i] = []
 
-            for row in csv.values.tolist():
-                for (i, j) in zip(row, performance_variables):
-                    data[j].append(i)
-                # rows for the table. Only for columns of one csv
-                values.append(row)
-            render_data.append(data)
+            if obj.event_file:
+                for row in csv.values.tolist():
+                    for (i, j) in zip(row, performance_variables):
+                        data[j].append(i)
 
-        # for context, data binding.
-        for csv in render_data:
-            for value in csv.keys():
-                # list with name of performance vars.
-                vars_perf.append(value)
-            for value in csv.values():
-                # list of lists, each list with the values of their associated performance var.
-                # values for each column in lists
-                data_values_vars_perf.append(value)
+                for k, v in dropwhile(lambda x: x[0] != 'TMilisegundos', data.items()):
+                    new_csv_dict[k] = v
+                process_event_data(new_csv_dict, max_frequency, obj.frequency)
+                there_is_event_file = True
+            else:
+                for row in csv.values.tolist():
+                    for (i, j) in zip(row, performance_variables):
+                        data[j].append(i)
+                    # manera temps menor
+                    # devices_files_data.append(data)
+                if there_is_event_file:
+                    value = new_csv_dict.get("TMilisegundos")[0]
+                    process_device_data(data, value, max_frequency, obj.frequency)
+                else:
+                    process_device_data(data, 0, max_frequency, obj.frequency)
 
+        context = {'perf_vars_list': performance_variables_to_select}
+        return render(request, 'data_analytics.html', context)
+
+
+# Posar el fitxer a la frequencia més gran dels fitxers carregats
+def process_event_data(csv_dict, max_frequency, curr_frequency):
+    new_csv = pd.DataFrame(csv_dict).to_csv(index=False, sep=";")
+    # Only one file with maximum frequency, the others with less frequency
+    if curr_frequency < max_frequency:
+        interpol(new_csv, curr_frequency, max_frequency)
+
+
+def interpol(csv, max_freq, curr_freq):
+    pass
+
+
+# Posar el fitxer a la frequencia més gran dels fitxers carregats
+def process_device_data(data_to_csv, value_first_time, max_frequency, curr_frequency):
+    new_array_starting_0 = []
+    new_array_time_starting_value_events = []
+    for n in range(0, len(data_to_csv.get("TIME")) + value_first_time):
+        new_array_starting_0.append(n)
+
+    if value_first_time != 0:
+        for i in dropwhile(lambda x: x != value_first_time, new_array_starting_0):
+            new_array_time_starting_value_events.append(i)
+        data_to_csv["TIME"] = new_array_time_starting_value_events
+    else:
+        data_to_csv["TIME"] = new_array_starting_0
+
+    new_csv = pd.DataFrame(data_to_csv).to_csv(index=False, sep=";")
+    if curr_frequency < max_frequency:
+        interpol(new_csv, max_frequency, curr_frequency)
+
+
+"""
+            for csv in render_data:
+                for value in csv.keys():
+                    # list with name of performance vars.
+                    vars_perf.append(value)
+                for value in csv.values():
+                    # list of lists, each list with the values of their associated performance var.
+                    data_values_vars_perf.append(value)
+                    
         context = {'perf_vars_list': performance_variables_to_select, 'column_titles': vars_perf,
                    'values_each_perf_var': data_values_vars_perf, 'values': values}
         return render(request, 'data_analytics.html', context)
+"""
 
 
 def line_chart(request):
