@@ -89,8 +89,8 @@ def data_analytics(request):
         max_frequency = get_max_freq(objects)
         performance_variables_to_select = []
         there_is_event_file = False
-        # devices_files_data = []
         new_csv_dict = {}
+        devices = []
 
         for obj in objects:
             csv = pd.read_csv(obj.csv.name, ";", )
@@ -98,7 +98,7 @@ def data_analytics(request):
 
         for obj in objects:
             data = {}
-            csv = pd.read_csv(obj.csv.name, ";", )
+            csv = pd.read_csv(obj.csv.name, ";")
             performance_variables = csv.columns.values.tolist()
 
             for i in performance_variables:
@@ -108,7 +108,6 @@ def data_analytics(request):
                 for row in csv.values.tolist():
                     for (i, j) in zip(row, performance_variables):
                         data[j].append(i)
-
                 for k, v in dropwhile(lambda x: x[0] != 'TMilisegundos', data.items()):
                     new_csv_dict[k] = v
                 process_event_data(new_csv_dict, max_frequency, obj.frequency)
@@ -117,62 +116,73 @@ def data_analytics(request):
                 for row in csv.values.tolist():
                     for (i, j) in zip(row, performance_variables):
                         data[j].append(i)
-                    # manera temps menor
-                    # devices_files_data.append(data)
                 if there_is_event_file:
                     value = new_csv_dict.get("TMilisegundos")[0]
-                    process_device_data(data, value, max_frequency, obj.frequency)
+                    devices.append(process_device_data(data, value, max_frequency, obj.frequency))
                 else:
-                    process_device_data(data, 0, max_frequency, obj.frequency)
-
+                    devices.append(process_device_data(data, 0, max_frequency, obj.frequency))
         context = {'perf_vars_list': performance_variables_to_select}
         return render(request, 'data_analytics.html', context)
 
 
 # Posar el fitxer a la frequencia més gran dels fitxers carregats
+# frecuencia a 1000 Hz. interpolar. Todos los ficheros a 1000 Hz
 def process_event_data(csv_dict, max_frequency, curr_frequency):
+    csv_dict["td"] = pd.to_timedelta(csv_dict["TMilisegundos"], "ms")
     new_csv = pd.DataFrame(csv_dict).to_csv(index=False, sep=";")
     # Only one file with maximum frequency, the others with less frequency
-    if curr_frequency < max_frequency:
-        interpol(new_csv, curr_frequency, max_frequency)
+    # if curr_frequency < max_frequency: interpol(new_csv, curr_frequency, max_frequency)
 
 
-def interpol(csv, max_freq, curr_freq):
-    pass
+def max_resample(csv_dict, curr_freq):
+    df = pd.DataFrame.from_dict(csv_dict, orient="columns")
+    df.to_csv("data_interpol.csv")
+    csv = pd.read_csv("data_interpol.csv", header=0, index_col=[0])
+    performance_variables = csv.columns.values.tolist()
+    data = {}
+    for i in performance_variables:
+        data[i] = []
+    if curr_freq == 100:
+        interpol(data, csv, performance_variables, 10)
+    elif curr_freq == 10:
+        interpol(data, csv, performance_variables, 100)
+    return data
+
+
+def interpol(data, csv, perf_vars, interpol_value):
+    extreme_time_value_to_interpolate = 0
+    for row in csv.values.tolist():
+        for (i, j) in zip(row, perf_vars):
+            if isinstance(i, int):
+                extreme_time_value_to_interpolate = i
+            if extreme_time_value_to_interpolate != 0 and not isinstance(i, int):
+                for z in range(interpol_value):
+                    # Interpol value str
+                    data[j].append(i)
+            if extreme_time_value_to_interpolate != 0 and isinstance(i, int):
+                # Interpol time
+                for time in range(extreme_time_value_to_interpolate,
+                                  extreme_time_value_to_interpolate + interpol_value):
+                    data[j].append(time)
 
 
 # Posar el fitxer a la frequencia més gran dels fitxers carregats
+# frecuencia a 1000 Hz. interpolar
 def process_device_data(data_to_csv, value_first_time, max_frequency, curr_frequency):
-    new_array_starting_0 = []
-    new_array_time_starting_value_events = []
-    for n in range(0, len(data_to_csv.get("TIME")) + value_first_time):
-        new_array_starting_0.append(n)
+    new_array_time = []
 
-    if value_first_time != 0:
-        for i in dropwhile(lambda x: x != value_first_time, new_array_starting_0):
-            new_array_time_starting_value_events.append(i)
-        data_to_csv["TIME"] = new_array_time_starting_value_events
-    else:
-        data_to_csv["TIME"] = new_array_starting_0
+    if curr_frequency == 100:
+        length_new_array = len((data_to_csv.get("TIME")))/curr_frequency*1000+value_first_time
+        for n in range(value_first_time, int(round(length_new_array)), 10):
+            new_array_time.append(n)
+    elif curr_frequency == 10:
+        length_new_array = len((data_to_csv.get("TIME")))/curr_frequency*1000+value_first_time
+        for t in range(value_first_time, int(round(length_new_array)) + 100, 100):
+            new_array_time.append(t)
+    data_to_csv["TIME"] = new_array_time
 
-    new_csv = pd.DataFrame(data_to_csv).to_csv(index=False, sep=";")
-    if curr_frequency < max_frequency:
-        interpol(new_csv, max_frequency, curr_frequency)
-
-
-"""
-            for csv in render_data:
-                for value in csv.keys():
-                    # list with name of performance vars.
-                    vars_perf.append(value)
-                for value in csv.values():
-                    # list of lists, each list with the values of their associated performance var.
-                    data_values_vars_perf.append(value)
-                    
-        context = {'perf_vars_list': performance_variables_to_select, 'column_titles': vars_perf,
-                   'values_each_perf_var': data_values_vars_perf, 'values': values}
-        return render(request, 'data_analytics.html', context)
-"""
+    # maximum resampling = 1000 Hz
+    return max_resample(data_to_csv, curr_frequency)
 
 
 def line_chart(request):
