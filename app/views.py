@@ -110,7 +110,7 @@ def data_analytics(request):
                         data[j].append(i)
                 for k, v in dropwhile(lambda x: x[0] != 'TMilisegundos', data.items()):
                     new_csv_dict[k] = v
-                process_event_data(new_csv_dict, max_frequency, obj.frequency)
+                process_event_data(new_csv_dict, obj.frequency)
                 there_is_event_file = True
             else:
                 for row in csv.values.tolist():
@@ -118,23 +118,25 @@ def data_analytics(request):
                         data[j].append(i)
                 if there_is_event_file:
                     value = new_csv_dict.get("TMilisegundos")[0]
-                    devices.append(process_device_data(data, value, max_frequency, obj.frequency))
+                    devices.append(process_device_data(data, value, obj.frequency))
                 else:
-                    devices.append(process_device_data(data, 0, max_frequency, obj.frequency))
+                    devices.append(process_device_data(data, 0, obj.frequency))
         context = {'perf_vars_list': performance_variables_to_select}
         return render(request, 'data_analytics.html', context)
 
 
-# Posar el fitxer a la frequencia més gran dels fitxers carregats
 # frecuencia a 1000 Hz. interpolar. Todos los ficheros a 1000 Hz
-def process_event_data(csv_dict, max_frequency, curr_frequency):
-    csv_dict["td"] = pd.to_timedelta(csv_dict["TMilisegundos"], "ms")
-    new_csv = pd.DataFrame(csv_dict).to_csv(index=False, sep=";")
-    # Only one file with maximum frequency, the others with less frequency
-    # if curr_frequency < max_frequency: interpol(new_csv, curr_frequency, max_frequency)
+def process_event_data(csv_dict, curr_frequency):
+    time_lasting = csv_dict["DuracionMiliseg"]
+    try:
+        del csv_dict["DuracionMiliseg"]
+    except KeyError:
+        print("Key 'DuracionMiliseg' not found")
+
+    max_resample(csv_dict, curr_frequency, time_lasting)
 
 
-def max_resample(csv_dict, curr_freq):
+def max_resample(csv_dict, curr_freq, time_lasting):
     df = pd.DataFrame.from_dict(csv_dict, orient="columns")
     df.to_csv("data_interpol.csv")
     csv = pd.read_csv("data_interpol.csv", header=0, index_col=[0])
@@ -143,13 +145,32 @@ def max_resample(csv_dict, curr_freq):
     for i in performance_variables:
         data[i] = []
     if curr_freq == 100:
-        interpol(data, csv, performance_variables, 10)
+        interpol_devices(data, csv, performance_variables, 10)
     elif curr_freq == 10:
-        interpol(data, csv, performance_variables, 100)
+        interpol_devices(data, csv, performance_variables, 100)
+    else:
+        interpol_events(data, csv, performance_variables, time_lasting)
     return data
 
 
-def interpol(data, csv, perf_vars, interpol_value):
+def interpol_events(data, csv, perf_vars, time_lasting):
+    for row, time in zip(csv.values.tolist(), time_lasting):
+        for (i, j) in zip(row, perf_vars):
+            if isinstance(i, int) and j == "TMilisegundos":
+                extreme_time_value_to_interpolate = i
+                # Interpolate time
+                for t in range(extreme_time_value_to_interpolate, time + extreme_time_value_to_interpolate + 1):
+                    data[j].append(t)
+            else:
+                # Interpolate str value
+                for z in range(time+1):
+                    data[j].append(i)
+    # Len de les llistes = 294799. Falta per arribar als 300000. Rellenar el espacio que falta
+    # con el ultimo valor de cada lista
+    r = 0
+
+
+def interpol_devices(data, csv, perf_vars, interpol_value):
     extreme_time_value_to_interpolate = 0
     for row in csv.values.tolist():
         for (i, j) in zip(row, perf_vars):
@@ -157,18 +178,16 @@ def interpol(data, csv, perf_vars, interpol_value):
                 extreme_time_value_to_interpolate = i
             if extreme_time_value_to_interpolate != 0 and not isinstance(i, int):
                 for z in range(interpol_value):
-                    # Interpol value str
+                    # Interpolate value str
                     data[j].append(i)
             if extreme_time_value_to_interpolate != 0 and isinstance(i, int):
-                # Interpol time
+                # Interpolate time
                 for time in range(extreme_time_value_to_interpolate,
                                   extreme_time_value_to_interpolate + interpol_value):
                     data[j].append(time)
 
 
-# Posar el fitxer a la frequencia més gran dels fitxers carregats
-# frecuencia a 1000 Hz. interpolar
-def process_device_data(data_to_csv, value_first_time, max_frequency, curr_frequency):
+def process_device_data(data_to_csv, value_first_time, curr_frequency):
     new_array_time = []
 
     if curr_frequency == 100:
@@ -181,8 +200,8 @@ def process_device_data(data_to_csv, value_first_time, max_frequency, curr_frequ
             new_array_time.append(t)
     data_to_csv["TIME"] = new_array_time
 
-    # maximum resampling = 1000 Hz
-    return max_resample(data_to_csv, curr_frequency)
+    # Maximum resample = 1000 Hz
+    return max_resample(data_to_csv, curr_frequency, None)
 
 
 def line_chart(request):
