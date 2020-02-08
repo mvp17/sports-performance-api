@@ -10,7 +10,7 @@ class FileForm(forms.ModelForm):
 
 class SettingsForm(forms.ModelForm):
     class Meta:
-        model = ConfigurationSettings
+        model = ConfigurationSetting
         # fields = ('init_time_ms', 'fin_time_ms', 'frequency')
         fields = ('frequency',)
 

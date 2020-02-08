@@ -1,5 +1,4 @@
 from django.db import models
-from solo.models import SingletonModel
 
 
 class LoadData(models.Model):
@@ -31,6 +30,24 @@ class LoadData(models.Model):
     def delete(self, *args, **kwargs):
         self.csv.delete()
         super().delete(*args, **kwargs)
+
+
+class SingletonModel(models.Model):
+
+    class Meta:
+        abstract = True
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super(SingletonModel, self).save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        pass
+
+    @classmethod
+    def load(cls):
+        obj, created = cls.objects.get_or_create(pk=1)
+        return obj
 
 
 class ConfigurationSetting(SingletonModel):

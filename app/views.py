@@ -90,7 +90,7 @@ def data_analytics(request):
         return render(request, 'data_analytics.html')
     else:
         objects_data = LoadData.objects.all()
-        frequency_data_table = ConfigurationSetting.frequency
+        frequency_data_table = ConfigurationSetting.load().frequency
         # max_frequency = get_max_freq(objects_data)
         performance_variables_to_select = []
         there_is_event_file = False
@@ -175,7 +175,6 @@ def process_device_data(data_to_csv, value_first_time, curr_frequency):
 # TODO
 def downsample(dict_csv, table_frequency):
     # Frequency of dict_csv data is 1000 Hz
-
     pass
 
 
