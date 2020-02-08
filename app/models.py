@@ -1,4 +1,5 @@
 from django.db import models
+from solo.models import SingletonModel
 
 
 class LoadData(models.Model):
@@ -32,7 +33,7 @@ class LoadData(models.Model):
         super().delete(*args, **kwargs)
 
 
-class ConfigurationSettings(models.Model):
+class ConfigurationSetting(SingletonModel):
     # init_time_ms = models.PositiveIntegerField(null=True, blank=False, help_text="Time in milliseconds")
     # fin_time_ms = models.PositiveIntegerField(null=True, blank=False, help_text="Time in milliseconds")
 
