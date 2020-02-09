@@ -172,10 +172,20 @@ def process_device_data(data_to_csv, value_first_time, curr_frequency):
     return max_resample(data_to_csv, curr_frequency, None)
 
 
-# TODO
 def downsample(dict_csv, table_frequency):
     # Frequency of dict_csv data is 1000 Hz
-    pass
+    if table_frequency != 1000:
+        average = int(round(1000/table_frequency))
+        time = []
+        for key in dict_csv.keys():
+            downsampled = dict_csv.get(key)[0::average]
+            if key == "TMilisegundos" or key == "TIME":
+                for i in downsampled:
+                    time.append(round(i/10)*10)
+                dict_csv[key] = time
+            else:
+                dict_csv[key] = downsampled
+    return dict_csv
 
 
 def max_resample(csv_dict, curr_freq, time_lasting):
