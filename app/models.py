@@ -5,8 +5,6 @@ class LoadData(models.Model):
     title = models.CharField(max_length=100)
     athlete = models.CharField(max_length=100)
     csv = models.FileField(upload_to='csv_files/')
-    init_time_ms = models.PositiveIntegerField(null=True, blank=False, help_text="Time in milliseconds")
-    fin_time_ms = models.PositiveIntegerField(null=True, blank=False, help_text="Time in milliseconds")
 
     CHOICES_BOOL = [(0, "Yes"), (1, "No")]
     event_file = models.IntegerField(null=True, blank=False, help_text="Events file?",
@@ -51,8 +49,8 @@ class SingletonModel(models.Model):
 
 
 class ConfigurationSetting(SingletonModel):
-    # init_time_ms = models.PositiveIntegerField(null=True, blank=False, help_text="Time in milliseconds")
-    # fin_time_ms = models.PositiveIntegerField(null=True, blank=False, help_text="Time in milliseconds")
+    init_time_ms = models.PositiveIntegerField(null=True, blank=False, help_text="Time in milliseconds")
+    fin_time_ms = models.PositiveIntegerField(null=True, blank=False, help_text="Time in milliseconds")
 
     FREQ_1FS = 1
     FREQ_5FS = 5
