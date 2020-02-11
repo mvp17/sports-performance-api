@@ -1,5 +1,6 @@
 import pandas as pd
 # import jsonpickle
+import os
 
 from .forms import *
 from itertools import dropwhile
@@ -70,15 +71,6 @@ def upload_csv_file(request):
         'form': form
     })
 
-"""
-def get_max_freq(objects):
-    frequency = 0
-    for obj in objects:
-        if obj.frequency > frequency:
-            frequency = obj.frequency
-    return frequency
-"""
-
 
 def data_analytics(request):
     # If no csv files uploaded, error message.
@@ -91,7 +83,6 @@ def data_analytics(request):
     else:
         objects_data = LoadData.objects.all()
         frequency_data_table = ConfigurationSetting.load().frequency
-        # max_frequency = get_max_freq(objects_data)
         performance_variables_to_select = []
         there_is_event_file = False
         new_csv_dict = {}
@@ -132,8 +123,37 @@ def data_analytics(request):
         for i in dict_devices:
             dict_downsampled_files.append(downsample(i, frequency_data_table))
 
-        context = {'perf_vars_list': performance_variables_to_select}
+        render_data_files = filter_time_files(dict_downsampled_files,
+                                              ConfigurationSetting.load().init_time_ms,
+                                              ConfigurationSetting.load().fin_time_ms)
+
+        context = {'perf_vars_list': performance_variables_to_select, 'csv_files': render_data_files}
         return render(request, 'data_analytics.html', context)
+
+
+def filter_time_files(dict_downsampled_files, init_filter_time, fin_filter_time):
+    files_to_render = []
+    for file in dict_downsampled_files:
+        df = pd.DataFrame.from_dict(file, orient="columns")
+        df.to_csv("filtered_time_files.csv")
+        csv = pd.read_csv("filtered_time_files.csv", header=0, index_col=[0])
+        os.remove("filtered_time_files.csv")
+        performance_variables = csv.columns.values.tolist()
+        data = {}
+        for i in performance_variables:
+            data[i] = []
+        for row in csv.values.tolist():
+            filter_time = False
+            for (i, j) in zip(row, performance_variables):
+                if j == "TMilisegundos" or j == "TIME":
+                    if fin_filter_time >= i >= init_filter_time:
+                        filter_time = True
+                        data[j].append(i)
+                else:
+                    if filter_time:
+                        data[j].append(i)
+        files_to_render.append(data)
+    return files_to_render
 
 
 # Frequency 1000 Hz.
@@ -192,6 +212,7 @@ def max_resample(csv_dict, curr_freq, time_lasting):
     df = pd.DataFrame.from_dict(csv_dict, orient="columns")
     df.to_csv("data_interpol.csv")
     csv = pd.read_csv("data_interpol.csv", header=0, index_col=[0])
+    os.remove("data_interpol.csv")
     performance_variables = csv.columns.values.tolist()
     data = {}
     for i in performance_variables:
