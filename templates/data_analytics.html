@@ -17,11 +17,12 @@
                     </ul>
                 {% else %}
         </div>
-        {% for perf_var in perf_vars_list %}
-            <input type="checkbox" class="checks" value={{ perf_var }}> {{ perf_var }}
-        {% endfor %}
-        <button class="btn btn-primary" onclick="getTableValues();"> Save</button>
-
+        <div class="container" style="margin: 25px 200px">
+            {% for perf_var in perf_vars_list %}
+                <input type="checkbox" class="checks" value={{ perf_var }}> {{ perf_var }}
+            {% endfor %}
+            <button class="btn btn-primary" onclick="getTableValues();"> Save</button>
+        </div>
         <script>
             function getTableValues() {
                 let checks = document.getElementsByClassName('checks');
@@ -32,8 +33,31 @@
                         str += checks[i].value + " ";
                     }
                 }
-                alert(str);
-                //printValues(str);
+                printValues(str);
+            }
+        </script>
+        <script>
+            function printValues(str) {
+                console.log(str);
+                let keys = [];
+                let values = [];
+                let list_json = {{ dict_csv_files|safe }};
+                for(let dict = 0; dict < list_json.length; dict++){
+                    for(let key in list_json[dict]){
+                        if (list_json[dict].hasOwnProperty(key)){
+                            keys.push(key);
+                            values.push(list_json[dict][key]);
+                        }
+                    }
+                }
+
+                for(let i in values){
+                    console.log(values[i])
+                }
+                for(let i in keys){
+                    console.log(keys[i])
+                }
+
             }
         </script>
 
@@ -42,24 +66,7 @@
          The <tr> tag defines a row in an HTML table.
          A <tr> element contains one or more <th> or <td> elements.
     -->
-        <table border="1" style="margin-top: 10px">
 
-            <tr>
-                {% for var in column_titles %}
-                    <th>{{ var }}</th>
-                {% endfor %}
-            </tr>
-            {% for row in values %}
-                <tr>
-                    {% for value in row %}
-                        <td>
-                            {{ value }}
-                        </td>
-                    {% endfor %}
-                </tr>
-            {% endfor %}
-
-        </table>
     </div>
 {% endif %}
 {% endblock %}

@@ -1,6 +1,5 @@
 import pandas as pd
-# import jsonpickle
-import os
+import os, math, json
 
 from .forms import *
 from itertools import dropwhile
@@ -83,15 +82,10 @@ def data_analytics(request):
     else:
         objects_data = LoadData.objects.all()
         frequency_data_table = ConfigurationSetting.load().frequency
-        performance_variables_to_select = []
         there_is_event_file = False
         new_csv_dict = {}
         dict_devices = []
         dict_downsampled_files = []
-
-        for obj in objects_data:
-            csv = pd.read_csv(obj.csv.name, ";", )
-            performance_variables_to_select += csv.columns.values.tolist()
 
         for obj in objects_data:
             data = {}
@@ -99,12 +93,12 @@ def data_analytics(request):
             performance_variables = csv.columns.values.tolist()
 
             for i in performance_variables:
-                data[i] = []
+                data[i.replace(" ", "_")] = []
 
             if obj.event_file == 0:
                 for row in csv.values.tolist():
                     for (i, j) in zip(row, performance_variables):
-                        data[j].append(i)
+                        data[j.replace(" ", "_")].append(i)
                 for k, v in dropwhile(lambda x: x[0] != 'TMilisegundos', data.items()):
                     new_csv_dict[k] = v
                 event_file_dict = process_event_data(new_csv_dict, obj.frequency)
@@ -113,12 +107,12 @@ def data_analytics(request):
             else:
                 for row in csv.values.tolist():
                     for (i, j) in zip(row, performance_variables):
-                        data[j].append(i)
+                        data[j.replace(" ", "_")].append(i)
                 if there_is_event_file:
                     value = new_csv_dict.get("TMilisegundos")[0]
-                    dict_devices.append(process_device_data(data, value, obj.frequency))
+                    dict_devices.append(process_device_data(data, value, obj.frequency, True))
                 else:
-                    dict_devices.append(process_device_data(data, 0, obj.frequency))
+                    dict_devices.append(process_device_data(data, 0, obj.frequency, False))
 
         for i in dict_devices:
             dict_downsampled_files.append(downsample(i, frequency_data_table))
@@ -126,8 +120,18 @@ def data_analytics(request):
         render_data_files = filter_time_files(dict_downsampled_files,
                                               ConfigurationSetting.load().init_time_ms,
                                               ConfigurationSetting.load().fin_time_ms)
+        for file in render_data_files:
+            for value in file.values():
+                for i in value:
+                    if isinstance(i, float) and math.isnan(i):
+                        value[value.index(i)] = 'null'
 
-        context = {'perf_vars_list': performance_variables_to_select, 'csv_files': render_data_files}
+        vars_perf = []
+        for file in render_data_files:
+            for key in file.keys():
+                vars_perf.append(key)
+
+        context = {'perf_vars_list': vars_perf, 'dict_csv_files': json.dumps(render_data_files)}
         return render(request, 'data_analytics.html', context)
 
 
@@ -156,6 +160,7 @@ def filter_time_files(dict_downsampled_files, init_filter_time, fin_filter_time)
     return files_to_render
 
 
+# TODO may 300000 replace by var
 # Frequency 1000 Hz.
 def process_event_data(csv_dict, curr_frequency):
     time_lasting = csv_dict["DuracionMiliseg"]
@@ -171,11 +176,11 @@ def process_event_data(csv_dict, curr_frequency):
         time_lasting[-1] = 300000 + first_time - last_time
 
     # Maximum resample = 1000 Hz
-    return max_resample(csv_dict, curr_frequency, time_lasting)
+    return max_resample(csv_dict, curr_frequency, time_lasting, False, 0)
 
 
 # Frequency 1000 Hz.
-def process_device_data(data_to_csv, value_first_time, curr_frequency):
+def process_device_data(data_to_csv, value_first_time, curr_frequency, is_event_file):
     new_array_time = []
 
     if curr_frequency == 100:
@@ -184,12 +189,12 @@ def process_device_data(data_to_csv, value_first_time, curr_frequency):
             new_array_time.append(n)
     elif curr_frequency == 10:
         length_new_array = len(data_to_csv.get("TIME"))/curr_frequency*1000+value_first_time
-        for t in range(value_first_time, int(round(length_new_array)) + 100, 100):
+        for t in range(value_first_time, int(round(length_new_array)), 100):
             new_array_time.append(t)
     data_to_csv["TIME"] = new_array_time
 
     # Maximum resample = 1000 Hz
-    return max_resample(data_to_csv, curr_frequency, None)
+    return max_resample(data_to_csv, curr_frequency, None, is_event_file, value_first_time)
 
 
 def downsample(dict_csv, table_frequency):
@@ -208,7 +213,7 @@ def downsample(dict_csv, table_frequency):
     return dict_csv
 
 
-def max_resample(csv_dict, curr_freq, time_lasting):
+def max_resample(csv_dict, curr_freq, time_lasting, is_event_file, value_first):
     df = pd.DataFrame.from_dict(csv_dict, orient="columns")
     df.to_csv("data_interpol.csv")
     csv = pd.read_csv("data_interpol.csv", header=0, index_col=[0])
@@ -218,9 +223,9 @@ def max_resample(csv_dict, curr_freq, time_lasting):
     for i in performance_variables:
         data[i] = []
     if curr_freq == 100:
-        interpol_devices(data, csv, performance_variables, 10)
+        interpol_devices(data, csv, performance_variables, 10, is_event_file, value_first)
     elif curr_freq == 10:
-        interpol_devices(data, csv, performance_variables, 100)
+        interpol_devices(data, csv, performance_variables, 100, is_event_file, value_first)
     elif curr_freq == 1000:
         for row in csv.values.tolist():
             for (i, j) in zip(row, performance_variables):
@@ -244,21 +249,34 @@ def interpol_events(data, csv, perf_vars, time_lasting):
                     data[j].append(i)
 
 
-def interpol_devices(data, csv, perf_vars, interpol_value):
+# TODO may 300000 replace by var
+def interpol_devices(data, csv, perf_vars, interpol_value, is_event_file, value_first):
     extreme_time_value_to_interpolate = 0
     for row in csv.values.tolist():
         for (i, j) in zip(row, perf_vars):
             if isinstance(i, int):
                 extreme_time_value_to_interpolate = i
-            if extreme_time_value_to_interpolate != 0 and not isinstance(i, int):
-                for z in range(interpol_value):
-                    # Interpolate value str
-                    data[j].append(i)
-            if extreme_time_value_to_interpolate != 0 and isinstance(i, int):
-                # Interpolate time
-                for time in range(extreme_time_value_to_interpolate,
-                                  extreme_time_value_to_interpolate + interpol_value):
-                    data[j].append(time)
+            if is_event_file and not (extreme_time_value_to_interpolate + interpol_value > 300000 + value_first):
+                if not isinstance(i, int):
+                    for z in range(interpol_value):
+                        # Interpolate value str
+                        data[j].append(i)
+                if isinstance(i, int):
+                    # Interpolate time
+                    for time in range(extreme_time_value_to_interpolate,
+                                      extreme_time_value_to_interpolate + interpol_value):
+                        data[j].append(time)
+            else:
+                if not (extreme_time_value_to_interpolate + interpol_value > 300000):
+                    if not isinstance(i, int):
+                        for z in range(interpol_value):
+                            # Interpolate value str
+                            data[j].append(i)
+                    if isinstance(i, int):
+                        # Interpolate time
+                        for time in range(extreme_time_value_to_interpolate,
+                                          extreme_time_value_to_interpolate + interpol_value):
+                            data[j].append(time)
 
 
 def line_chart(request):
