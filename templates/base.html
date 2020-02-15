@@ -64,14 +64,25 @@
 
                     <h1> Welcome home!</h1>
                     <div class="container" style="margin: 70px 10px ">
-                        <h3 style="text-transform: uppercase; color: #21cc1b;  font-weight: bold; text-align: center"> Conditions for using the software correctly</h3>
+                        <h3 style="text-transform: uppercase; color: #21cc1b;  font-weight: bold; text-align: center"> Conditions of use</h3>
                         <div class="container" style="margin: 25px 70px ">
-                            <h4> CSV files</h4>
-                            <h5 class="alert alert-danger"> COLUMN NAMES in both file types must NOT contain ACCENTS</h5>
-                            <h5 class="alert alert-danger"> The format for saving the files must be of the type "CSV (delimited by commas) (* .csv)".</h5>
-                            <h5 class="alert alert-danger"> The event file must have the name of the millisecond column as "TMilisegundos",
-                                the column name of the millisecond duration as "DuracionMiliseg". Both column names with NO WHITE SPACES</h5>
-                            <h5 class="alert alert-danger"> The device file must have the time column name as "TIME". That column name with NO WHITE SPACES</h5>
+                            <h5 class="alert alert-warning"> CSV files</h5>
+                            <div class="container" style="margin: 25px 45px ">
+                                <h6 class="alert alert-danger"> COLUMN NAMES in both file types must NOT contain ACCENTS.</h6>
+                                <h6 class="alert alert-danger"> The format for saving the files must be of the type
+                                    "CSV (delimited by commas) (* .csv)".</h6>
+                                <h6 class="alert alert-danger"> The event file must have the name of the millisecond column as "TMilisegundos",
+                                    the column name of the millisecond duration as "DuracionMiliseg". Both column names with NO WHITE SPACES.</h6>
+                                <h6 class="alert alert-danger"> The device file must have the time column name as "TIME".
+                                    That column name with NO WHITE SPACES.</h6>
+                            </div>
+                            <h5 class="alert alert-warning"> Through the web</h5>
+                            <div class="container" style="margin: 25px 45px ">
+                                <h6 class="alert alert-danger"> Load EVENT FILE FIRST in case TIME series of DEVICE FILES has to START with
+                                the FIRST time VALUE of EVENT file. WITHOUT event file first loaded (first in file list),
+                                device files' TIME series will START by 0.</h6>
+                            </div>
+
                         </div>
                     </div>
 

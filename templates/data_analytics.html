@@ -39,9 +39,10 @@
         <script>
             function printValues(str) {
                 console.log(str);
+                let list_json = [];
                 let keys = [];
                 let values = [];
-                let list_json = {{ dict_csv_files|safe }};
+                list_json = {{ dict_csv_files|safe }};
                 for(let dict = 0; dict < list_json.length; dict++){
                     for(let key in list_json[dict]){
                         if (list_json[dict].hasOwnProperty(key)){
