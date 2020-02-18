@@ -21,53 +21,77 @@
             {% for perf_var in perf_vars_list %}
                 <input type="checkbox" class="checks" value={{ perf_var }}> {{ perf_var }}
             {% endfor %}
-            <button class="btn btn-primary" onclick="getTableValues();"> Save</button>
+            <button class="btn btn-primary" onclick="getSelectorChecks();"> Save</button>
         </div>
+
         <script>
-            function getTableValues() {
+            function getSelectorChecks() {
                 let checks = document.getElementsByClassName('checks');
-                let str = '';
+                let str = [];
 
                 for ( let i = 0; i < checks.length; i++ ){
                     if ( checks[i].checked === true ){
-                        str += checks[i].value + " ";
+                        str.push(checks[i].value);
                     }
                 }
-                printValues(str);
+                processChecksWithDataToDisplay(str);
             }
         </script>
+
         <script>
-            function printValues(str) {
-                console.log(str);
+            function processChecksWithDataToDisplay(str) {
                 let list_json = [];
                 let keys = [];
                 let values = [];
                 list_json = {{ dict_csv_files|safe }};
+
                 for(let dict = 0; dict < list_json.length; dict++){
                     for(let key in list_json[dict]){
                         if (list_json[dict].hasOwnProperty(key)){
-                            keys.push(key);
-                            values.push(list_json[dict][key]);
+                            if (str.includes(key)){
+                                keys.push(key);
+                                values.push(list_json[dict][key]);
+                            }
                         }
                     }
                 }
-
-                for(let i in values){
-                    console.log(values[i])
-                }
-                for(let i in keys){
-                    console.log(keys[i])
-                }
-
+                generateDataTable(keys, values);
             }
         </script>
 
-    <!-- The text in <th> elements are bold and centered by default.
-         The text in <td> elements are regular and left-aligned by default.
-         The <tr> tag defines a row in an HTML table.
-         A <tr> element contains one or more <th> or <td> elements.
-    -->
+        <script>
+            function generateDataTable(columnNames, columnValues) {
+                let body = document.body, tbl = document.createElement('table');
+                // let values = columnValues;
+                let subListLength = 0;
+
+                let tr = tbl.insertRow();
+                for (let i = 0; i < columnNames.length; i++) {
+                    let th = document.createElement("TH");
+                    th.appendChild(document.createTextNode(columnNames[i].toString()));
+                    tr.appendChild(th);
+                }
+
+                for (let value in columnValues){
+                    if (columnValues.hasOwnProperty(value)) {
+                        subListLength = columnValues[value].length;
+                        break
+                    }
+                }
+
+                for (let i = 0; i < subListLength; i++){
+                    let tr = tbl.insertRow();
+                    for (let j = 0; j < columnValues.length; j++){
+                        let td = tr.insertCell();
+                        td.appendChild(document.createTextNode(columnValues[j][0].toString()));
+                        columnValues[j].shift();
+                    }
+                }
+                body.appendChild(tbl);
+            }
+        </script>
 
     </div>
+
 {% endif %}
 {% endblock %}
