@@ -1,5 +1,7 @@
 import pandas as pd
-import os, math, json
+import os
+import math
+import json
 
 from .forms import *
 from itertools import dropwhile
@@ -73,6 +75,7 @@ def upload_csv_file(request):
 
 def data_analytics(request):
     # If no csv files uploaded, error message.
+    # If no settings configured, error message.
     if LoadData.objects.count() == 0:
         messages.error(request, 'Error: No data to analyse')
         return render(request, 'data_analytics.html')
@@ -269,7 +272,3 @@ def interpol_devices(data, csv, perf_vars, interpol_value, limit_length):
                     for time in range(extreme_time_value_to_interpolate,
                                       extreme_time_value_to_interpolate + interpol_value):
                         data[j].append(time)
-
-
-def line_chart(request):
-    return render(request, 'line_chart.html')

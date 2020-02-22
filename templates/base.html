@@ -41,9 +41,6 @@
                                     <a class=" nav-link" href="{% url 'data analytics' %}"> Data analytics</a>
                                 </li>
 
-                                <li class="nav-item">
-                                    <a class=" nav-link" href="{% url 'line chart' %}"> Line chart</a>
-                                </li>
                             </ul>
                             <ul class="navbar-nav margin-right: auto">
                                 <li class="nav-item active" >
@@ -81,6 +78,8 @@
                                 <h6 class="alert alert-danger"> Load EVENT FILE FIRST in case TIME series of DEVICE FILES has to START with
                                 the FIRST time VALUE of EVENT file. WITHOUT event file first loaded (first in file list),
                                 device files' TIME series will START by 0.</h6>
+                                <h6 class="alert alert-danger"> SETTINGS initial FILTER TIME for data table should be GREATER than
+                                    or EQUAL to the first time value of EVENTS FILE.</h6>
                             </div>
 
                         </div>

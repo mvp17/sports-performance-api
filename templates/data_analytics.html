@@ -37,9 +37,7 @@
                 }
                 processChecksWithDataToDisplay(str);
             }
-        </script>
 
-        <script>
             function processChecksWithDataToDisplay(str) {
                 let list_json = [];
                 let keys = [];
@@ -58,12 +56,9 @@
                 }
                 generateDataTable(keys, values);
             }
-        </script>
 
-        <script>
             function generateDataTable(columnNames, columnValues) {
                 let body = document.body, tbl = document.createElement('table');
-                // let values = columnValues;
                 let subListLength = 0;
 
                 let tr = tbl.insertRow();
@@ -90,9 +85,7 @@
                 }
                 body.appendChild(tbl);
             }
-        </script>
 
-        <script>
         function download_csv(csv, filename) {
             let csvFile;
             let downloadLink;
@@ -115,7 +108,6 @@
             // Add the link to your DOM
             document.body.appendChild(downloadLink);
 
-            // Lanzamos
             downloadLink.click();
         }
 
