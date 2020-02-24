@@ -68,8 +68,8 @@
                                 <h6 class="alert alert-danger"> COLUMN NAMES in both file types must NOT contain ACCENTS.</h6>
                                 <h6 class="alert alert-danger"> The format for saving the files must be of the type
                                     "CSV (delimited by commas) (* .csv)".</h6>
-                                <h6 class="alert alert-danger"> The event file must have the name of the millisecond column as "TMilisegundos",
-                                    the column name of the millisecond duration as "DuracionMiliseg". Both column names with NO WHITE SPACES.</h6>
+                                <h6 class="alert alert-danger"> The names specified in SETTINGS MUST match with the names of each column
+                                                                with the related names in each loaded file.</h6>
                                 <h6 class="alert alert-danger"> The device file must have the time column name as "TIME".
                                     That column name with NO WHITE SPACES.</h6>
                             </div>
@@ -79,7 +79,7 @@
                                 the FIRST time VALUE of EVENT file. WITHOUT event file first loaded (first in file list),
                                 device files' TIME series will START by 0.</h6>
                                 <h6 class="alert alert-danger"> SETTINGS initial FILTER TIME for data table should be GREATER than
-                                    or EQUAL to the first time value of EVENTS FILE.</h6>
+                                    or EQUAL to the first time value (milliseconds) of EVENTS FILE.</h6>
                             </div>
 
                         </div>

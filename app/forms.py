@@ -11,4 +11,4 @@ class FileForm(forms.ModelForm):
 class SettingsForm(forms.ModelForm):
     class Meta:
         model = ConfigurationSetting
-        fields = ('init_time_ms', 'fin_time_ms', 'frequency')
+        fields = ('init_time_ms', 'fin_time_ms', 'time_ms_name', 'duration_time_ms_name', 'frequency')

@@ -4,7 +4,6 @@ import math
 import json
 
 from .forms import *
-from itertools import dropwhile
 from django.views.generic import *
 from .models import *
 from django.contrib import messages
@@ -85,8 +84,10 @@ def data_analytics(request):
     else:
         objects_data = LoadData.objects.all()
         frequency_data_table = ConfigurationSetting.load().frequency
+        time_ms_name_events_file = ConfigurationSetting.load().time_ms_name
+        duration_time_ms_name_events_file = ConfigurationSetting.load().duration_time_ms_name
         there_is_event_file = False
-        new_csv_dict = {}
+        events_csv_dict = {}
         dict_devices = []
         dict_down_sampled_files = []
 
@@ -102,27 +103,28 @@ def data_analytics(request):
                 for row in csv.values.tolist():
                     for (i, j) in zip(row, performance_variables):
                         data[j.replace(" ", "_")].append(i)
-                for k, v in dropwhile(lambda x: x[0] != 'TMilisegundos', data.items()):
-                    new_csv_dict[k] = v
-                event_file_dict = process_event_data(new_csv_dict, obj.frequency)
-                dict_down_sampled_files.append(down_sample(event_file_dict, frequency_data_table))
+                events_csv_dict = data
+                event_file_dict = process_event_data(data, obj.frequency,
+                                                     time_ms_name_events_file, duration_time_ms_name_events_file)
+                dict_down_sampled_files.append(down_sample(event_file_dict, frequency_data_table,
+                                                           time_ms_name_events_file))
                 there_is_event_file = True
             else:
                 for row in csv.values.tolist():
                     for (i, j) in zip(row, performance_variables):
                         data[j.replace(" ", "_")].append(i)
                 if there_is_event_file:
-                    value = new_csv_dict.get("TMilisegundos")[0]
+                    value = events_csv_dict.get(time_ms_name_events_file)[0]
                     dict_devices.append(process_device_data(data, value, obj.frequency))
                 else:
                     dict_devices.append(process_device_data(data, 0, obj.frequency))
 
         for i in dict_devices:
-            dict_down_sampled_files.append(down_sample(i, frequency_data_table))
+            dict_down_sampled_files.append(down_sample(i, frequency_data_table, time_ms_name_events_file))
 
         render_data_files = filter_time_files(dict_down_sampled_files,
                                               ConfigurationSetting.load().init_time_ms,
-                                              ConfigurationSetting.load().fin_time_ms)
+                                              ConfigurationSetting.load().fin_time_ms, time_ms_name_events_file)
         for file in render_data_files:
             for value in file.values():
                 for i in value:
@@ -138,7 +140,7 @@ def data_analytics(request):
         return render(request, 'data_analytics.html', context)
 
 
-def filter_time_files(dict_down_sampled_files, init_filter_time, fin_filter_time):
+def filter_time_files(dict_down_sampled_files, init_filter_time, fin_filter_time, events_time_name):
     files_to_render = []
     for file in dict_down_sampled_files:
         df = pd.DataFrame.from_dict(file, orient="columns")
@@ -152,7 +154,7 @@ def filter_time_files(dict_down_sampled_files, init_filter_time, fin_filter_time
         for row in csv.values.tolist():
             filter_time = False
             for (i, j) in zip(row, performance_variables):
-                if j == "TMilisegundos" or j == "TIME":
+                if j == events_time_name or j == "TIME":
                     if fin_filter_time >= i >= init_filter_time:
                         filter_time = True
                         data[j].append(i)
@@ -164,25 +166,19 @@ def filter_time_files(dict_down_sampled_files, init_filter_time, fin_filter_time
 
 
 # Frequency 1000 Hz.
-def process_event_data(csv_dict, curr_frequency):
-    time_lasting = csv_dict["DuracionMiliseg"]
-    time = csv_dict["TMilisegundos"]
-    try:
-        del csv_dict["DuracionMiliseg"]
-    except KeyError:
-        print("Key 'DuracionMiliseg' not found")
+def process_event_data(csv_dict, curr_frequency, events_time_name, events_duration_time_name):
+    time_lasting = csv_dict[events_duration_time_name]
+    time = csv_dict[events_time_name]
 
     first_time = time[0]
     last_time = time[-1]
     limit = int(round(last_time/1000))*1000
-    # 300000 = 5 min * 60 sec * 1000 mil-sec
-    # Always 5 min of data set ?
-    # Fix with var limit
+
     if (time_lasting[-1] + last_time) != limit + first_time:
         time_lasting[-1] = limit + first_time - last_time
 
     # Maximum re-sample = 1000 Hz
-    return max_re_sample(csv_dict, curr_frequency, time_lasting, 0)
+    return max_re_sample(csv_dict, curr_frequency, time_lasting, 0, events_time_name)
 
 
 # Frequency 1000 Hz.
@@ -201,17 +197,17 @@ def process_device_data(data_to_csv, value_first_time, curr_frequency):
     data_to_csv["TIME"] = new_array_time
 
     # Maximum re-sampling = 1000 Hz
-    return max_re_sample(data_to_csv, curr_frequency, None, length_new_array)
+    return max_re_sample(data_to_csv, curr_frequency, None, length_new_array, None)
 
 
-def down_sample(dict_csv, table_frequency):
+def down_sample(dict_csv, table_frequency, events_time_name):
     # Frequency of dict_csv data is 1000 Hz
     if table_frequency != 1000:
         average = int(round(1000/table_frequency))
         time = []
         for key in dict_csv.keys():
             downsampled = dict_csv.get(key)[0::average]
-            if key == "TMilisegundos" or key == "TIME":
+            if key == events_time_name or key == "TIME":
                 for i in downsampled:
                     time.append(round(i/10)*10)
                 dict_csv[key] = time
@@ -220,7 +216,7 @@ def down_sample(dict_csv, table_frequency):
     return dict_csv
 
 
-def max_re_sample(csv_dict, curr_freq, time_lasting, length_array):
+def max_re_sample(csv_dict, curr_freq, time_lasting, length_array, events_time_name):
     df = pd.DataFrame.from_dict(csv_dict, orient="columns")
     df.to_csv("data_interpol.csv")
     csv = pd.read_csv("data_interpol.csv", header=0, index_col=[0])
@@ -238,14 +234,14 @@ def max_re_sample(csv_dict, curr_freq, time_lasting, length_array):
             for (i, j) in zip(row, performance_variables):
                 data[j].append(i)
     else:
-        interpol_events(data, csv, performance_variables, time_lasting)
+        interpol_events(data, csv, performance_variables, time_lasting, events_time_name)
     return data
 
 
-def interpol_events(data, csv, perf_vars, time_lasting):
+def interpol_events(data, csv, perf_vars, time_lasting, events_time_name):
     for row, time in zip(csv.values.tolist(), time_lasting):
         for (i, j) in zip(row, perf_vars):
-            if isinstance(i, int) and j == "TMilisegundos":
+            if isinstance(i, int) and j == events_time_name:
                 extreme_time_value_to_interpolate = i
                 # Interpolate time
                 for t in range(extreme_time_value_to_interpolate, time + extreme_time_value_to_interpolate):
