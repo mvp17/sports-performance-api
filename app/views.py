@@ -134,7 +134,8 @@ def data_analytics(request):
         vars_perf = []
         for file in render_data_files:
             for key in file.keys():
-                vars_perf.append(key)
+                if key not in vars_perf:
+                    vars_perf.append(key)
 
         context = {'perf_vars_list': vars_perf, 'dict_csv_files': json.dumps(render_data_files)}
         return render(request, 'data_analytics.html', context)
@@ -167,6 +168,22 @@ def filter_time_files(dict_down_sampled_files, init_filter_time, fin_filter_time
 
 # Frequency 1000 Hz.
 def process_event_data(csv_dict, curr_frequency, events_time_name, events_duration_time_name):
+    keys_floats = {}
+    """Handle float numbers except nan"""
+    for key in csv_dict.keys():
+        for i in csv_dict[key]:
+            if isinstance(i, float):
+                if key not in keys_floats.keys() and not math.isnan(i):
+                    keys_floats[key] = []
+                if key in keys_floats.keys():
+                    if math.isnan(i):
+                        keys_floats[key].append(i)
+                    else:
+                        keys_floats[key].append(int(math.floor(i)))
+    for key in keys_floats:
+        csv_dict[key] = keys_floats[key]
+    """Handle float numbers except nan"""
+
     time_lasting = csv_dict[events_duration_time_name]
     time = csv_dict[events_time_name]
 
