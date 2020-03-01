@@ -124,7 +124,8 @@ def data_analytics(request):
 
         render_data_files = filter_time_files(dict_down_sampled_files,
                                               ConfigurationSetting.load().init_time_ms,
-                                              ConfigurationSetting.load().fin_time_ms, time_ms_name_events_file)
+                                              ConfigurationSetting.load().fin_time_ms, time_ms_name_events_file,
+                                              duration_time_ms_name_events_file)
         for file in render_data_files:
             for value in file.values():
                 for i in value:
@@ -141,7 +142,8 @@ def data_analytics(request):
         return render(request, 'data_analytics.html', context)
 
 
-def filter_time_files(dict_down_sampled_files, init_filter_time, fin_filter_time, events_time_name):
+def filter_time_files(dict_down_sampled_files, init_filter_time, fin_filter_time, events_time_name,
+                      events_duration_time_name):
     files_to_render = []
     for file in dict_down_sampled_files:
         df = pd.DataFrame.from_dict(file, orient="columns")
@@ -162,12 +164,12 @@ def filter_time_files(dict_down_sampled_files, init_filter_time, fin_filter_time
                 else:
                     if filter_time:
                         data[j].append(i)
+        float_data_to_int_data(data, events_duration_time_name)
         files_to_render.append(data)
     return files_to_render
 
 
-# Frequency 1000 Hz.
-def process_event_data(csv_dict, curr_frequency, events_time_name, events_duration_time_name):
+def float_data_to_int_data(csv_dict, events_duration_time_name):
     keys_floats = {}
     """Handle float numbers except nan"""
     for key in csv_dict.keys():
@@ -177,25 +179,35 @@ def process_event_data(csv_dict, curr_frequency, events_time_name, events_durati
                     keys_floats[key] = []
                 if key in keys_floats.keys():
                     if math.isnan(i):
-                        keys_floats[key].append(i)
+                        if key == events_duration_time_name:
+                            keys_floats[key].append(0)
+                        else:
+                            keys_floats[key].append(i)
                     else:
                         keys_floats[key].append(int(math.floor(i)))
+
     for key in keys_floats:
         csv_dict[key] = keys_floats[key]
     """Handle float numbers except nan"""
 
+
+# Frequency 1000 Hz.
+def process_event_data(csv_dict, curr_frequency, events_time_name, events_duration_time_name):
+    float_data_to_int_data(csv_dict, events_duration_time_name)
     time_lasting = csv_dict[events_duration_time_name]
     time = csv_dict[events_time_name]
-
     first_time = time[0]
     last_time = time[-1]
-    limit = int(round(last_time/1000))*1000
 
+    # Hesitation here
+    limit = int(round(last_time/1000))*1000
+    if limit < last_time:
+        limit = last_time
     if (time_lasting[-1] + last_time) != limit + first_time:
         time_lasting[-1] = limit + first_time - last_time
 
     # Maximum re-sample = 1000 Hz
-    return max_re_sample(csv_dict, curr_frequency, time_lasting, 0, events_time_name)
+    return max_re_sample(csv_dict, curr_frequency, time_lasting, 0, events_time_name, events_duration_time_name)
 
 
 # Frequency 1000 Hz.
@@ -214,7 +226,7 @@ def process_device_data(data_to_csv, value_first_time, curr_frequency):
     data_to_csv["TIME"] = new_array_time
 
     # Maximum re-sampling = 1000 Hz
-    return max_re_sample(data_to_csv, curr_frequency, None, length_new_array, None)
+    return max_re_sample(data_to_csv, curr_frequency, None, length_new_array, None, None)
 
 
 def down_sample(dict_csv, table_frequency, events_time_name):
@@ -233,7 +245,7 @@ def down_sample(dict_csv, table_frequency, events_time_name):
     return dict_csv
 
 
-def max_re_sample(csv_dict, curr_freq, time_lasting, length_array, events_time_name):
+def max_re_sample(csv_dict, curr_freq, time_lasting, length_array, events_time_name, events_duration_time_name):
     df = pd.DataFrame.from_dict(csv_dict, orient="columns")
     df.to_csv("data_interpol.csv")
     csv = pd.read_csv("data_interpol.csv", header=0, index_col=[0])
@@ -251,11 +263,11 @@ def max_re_sample(csv_dict, curr_freq, time_lasting, length_array, events_time_n
             for (i, j) in zip(row, performance_variables):
                 data[j].append(i)
     else:
-        interpol_events(data, csv, performance_variables, time_lasting, events_time_name)
+        interpol_events(data, csv, performance_variables, time_lasting, events_time_name, events_duration_time_name)
     return data
 
 
-def interpol_events(data, csv, perf_vars, time_lasting, events_time_name):
+def interpol_events(data, csv, perf_vars, time_lasting, events_time_name, events_duration_time_name):
     for row, time in zip(csv.values.tolist(), time_lasting):
         for (i, j) in zip(row, perf_vars):
             if isinstance(i, int) and j == events_time_name:
@@ -267,6 +279,8 @@ def interpol_events(data, csv, perf_vars, time_lasting, events_time_name):
                 # Interpolate str value
                 for z in range(time):
                     data[j].append(i)
+    float_data_to_int_data(data, events_duration_time_name)
+    r = 0
 
 
 def interpol_devices(data, csv, perf_vars, interpol_value, limit_length):
