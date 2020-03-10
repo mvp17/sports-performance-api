@@ -203,8 +203,8 @@ def process_event_data(csv_dict, curr_frequency, events_time_name, events_durati
     limit = int(round(last_time/1000))*1000
     if limit < last_time:
         limit = last_time
-    if (time_lasting[-1] + last_time) != limit + first_time:
-        time_lasting[-1] = limit + first_time - last_time
+    # if (time_lasting[-1] + last_time) != limit + first_time:
+    time_lasting[-1] = limit + first_time - last_time
 
     # Maximum re-sample = 1000 Hz
     return max_re_sample(csv_dict, curr_frequency, time_lasting, 0, events_time_name, events_duration_time_name)
@@ -280,7 +280,6 @@ def interpol_events(data, csv, perf_vars, time_lasting, events_time_name, events
                 for z in range(time):
                     data[j].append(i)
     float_data_to_int_data(data, events_duration_time_name)
-    r = 0
 
 
 def interpol_devices(data, csv, perf_vars, interpol_value, limit_length):
