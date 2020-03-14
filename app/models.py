@@ -7,7 +7,7 @@ class LoadData(models.Model):
     csv = models.FileField(upload_to='csv_files/')
 
     CHOICES_BOOL = [(0, "Yes"), (1, "No")]
-    event_file = models.IntegerField(blank=False, help_text="Events file?",
+    event_file = models.IntegerField(blank=False, help_text="Is it events file what you are uploading?",
                                      choices=CHOICES_BOOL, default=0)
 
     FREQ_1FS = 1
@@ -16,14 +16,17 @@ class LoadData(models.Model):
     FREQ_25FS = 25
     FREQ_100FS = 100
     FREQ_1000FS = 1000
-    FREQ_CHOICES = [(FREQ_1FS, "1 Hz"),
+    FREQ_NONE = 0
+    FREQ_CHOICES = [(FREQ_NONE, ""),
+                    (FREQ_1FS, "1 Hz"),
                     (FREQ_5FS, "5 Hz"),
                     (FREQ_10FS, "10 Hz"),
                     (FREQ_25FS, "25 Hz"),
                     (FREQ_100FS, "100 Hz"),
                     (FREQ_1000FS, "1000 Hz")
                     ]
-    frequency = models.IntegerField(choices=FREQ_CHOICES, unique=False, default=FREQ_5FS)
+    frequency = models.IntegerField(choices=FREQ_CHOICES, default=FREQ_NONE,
+                                    help_text="Ignore the field when uploading events file.")
 
     def delete(self, *args, **kwargs):
         self.csv.delete()
@@ -49,13 +52,15 @@ class SingletonModel(models.Model):
 
 
 class ConfigurationSetting(SingletonModel):
-    init_time_ms = models.PositiveIntegerField(null=True, blank=False, help_text="Time in milliseconds")
-    fin_time_ms = models.PositiveIntegerField(null=True, blank=False, help_text="Time in milliseconds")
+    init_time_ms = models.PositiveIntegerField(null=True, blank=False, help_text="Time in milliseconds.")
+    fin_time_ms = models.PositiveIntegerField(null=True, blank=False, help_text="Time in milliseconds.")
     time_ms_name = models.CharField(null=True, max_length=100, blank=False,
-                                    help_text="Column name of Time (milli-seconds) values (events file)")
+                                    default="Ignore if you want to analyse only devices files",
+                                    help_text="Column name of Time in milli-seconds values (events file).")
     duration_time_ms_name = models.CharField(null=True, max_length=100, blank=False,
-                                             help_text="Column name of Time Duration (milli-seconds) "
-                                                       "values (events file)")
+                                             default="Ignore if you want to analyse only devices files",
+                                             help_text="Column name of Time Duration in milli-seconds "
+                                                       "values (events file).")
 
     FREQ_1FS = 1
     FREQ_5FS = 5
@@ -70,5 +75,5 @@ class ConfigurationSetting(SingletonModel):
                     (FREQ_100FS, "100 Hz"),
                     (FREQ_1000FS, "1000 Hz")
                     ]
-    frequency = models.IntegerField(choices=FREQ_CHOICES, unique=False, default=FREQ_5FS,
-                                    help_text="Data table frequency")
+    frequency = models.IntegerField(choices=FREQ_CHOICES, default=FREQ_5FS,
+                                    help_text="Data table frequency.")

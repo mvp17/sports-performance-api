@@ -36,11 +36,33 @@ def signup(request):
     })
 
 
-class Configuration(CreateView):
-    model = ConfigurationSetting
-    form_class = SettingsForm
-    success_url = reverse_lazy('home')
-    template_name = 'settings.html'
+def configuration(request):
+    # If no csv files uploaded, error message.
+    if LoadData.objects.count() == 0:
+        messages.error(request, 'Error: No data to analyse. Please upload some csv files.')
+        return render(request, 'settings.html')
+    else:
+        objects_data = LoadData.objects.all()
+        context_perf_vars = []
+        for obj in objects_data:
+            if obj.event_file == 0:
+                csv = pd.read_csv(obj.csv.name, ";")
+                performance_variables = csv.columns.values.tolist()
+                for i in performance_variables:
+                    context_perf_vars.append(i.replace(" ", "_"))
+            # TODO: render performance variables to settings form (for usability)
+
+    if request.method == 'POST':
+        form = SettingsForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('home')
+    else:
+        form = SettingsForm()
+
+    return render(request, 'settings.html', {
+        'form': form
+    })
 
 
 def delete_file(request, pk):
@@ -64,7 +86,7 @@ def upload_csv_file(request):
             form.save()
             return redirect('file_list')
         else:
-            messages.error(request, 'Error in parameters (only csv files)')
+            messages.error(request, 'Error in parameters. Should upload only csv files.')
     else:
         form = FileForm()
     return render(request, 'uploading/upload_file.html', {
@@ -76,10 +98,10 @@ def data_analytics(request):
     # If no csv files uploaded, error message.
     # If no settings configured, error message.
     if LoadData.objects.count() == 0:
-        messages.error(request, 'Error: No data to analyse')
+        messages.error(request, 'Error: No data to analyse. Please upload some csv files.')
         return render(request, 'data_analytics.html')
     elif ConfigurationSetting.objects.count() == 0:
-        messages.error(request, 'Error: No settings configured')
+        messages.error(request, 'Error: No settings configured. Please go to Settings and enter your configuration.')
         return render(request, 'data_analytics.html')
     else:
         objects_data = LoadData.objects.all()
