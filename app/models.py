@@ -26,7 +26,7 @@ class LoadData(models.Model):
                     (FREQ_1000FS, "1000 Hz")
                     ]
     frequency = models.IntegerField(choices=FREQ_CHOICES, default=FREQ_NONE,
-                                    help_text="Ignore the field when uploading events file.")
+                                    help_text="Ignore the field when uploading EVENTS file.")
 
     def delete(self, *args, **kwargs):
         self.csv.delete()
@@ -71,9 +71,13 @@ class ConfigurationSetting(SingletonModel):
     frequency = models.IntegerField(choices=FREQ_CHOICES, default=FREQ_5FS, help_text="Data table frequency.")
 
 
-class KeyWords(SingletonModel):
+class KeyWordEventsFile(SingletonModel):
     time_ms_name = models.CharField(null=True, max_length=100, blank=False,
-                                    help_text="Column name of Time in milli-seconds values (events file).")
+                                    help_text="Column name of Time in milli-seconds values.")
     duration_time_ms_name = models.CharField(null=True, max_length=100, blank=False,
-                                             help_text="Column name of Time Duration in milli-seconds "
-                                                       "values (events file).")
+                                             help_text="Column name of Time Duration in milli-seconds values.")
+
+
+class KeyWordDevicesFile(SingletonModel):
+    time_name = models.CharField(null=True, max_length=100, blank=False,
+                                 help_text="Column name of Time of DEVICES files.")

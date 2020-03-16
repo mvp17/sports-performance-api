@@ -40,20 +40,54 @@ def signup(request):
 
 def configuration(request):
     # If no csv files uploaded, error message.
+    # If no key words entered, error message.
+
     if LoadData.objects.count() == 0:
         messages.error(request, 'Error: No data to analyse. Please upload some csv files.')
         return render(request, 'settings.html')
+    elif KeyWordEventsFile.objects.count() == 0:
+        messages.error(request, 'Error: No events file key words known, although there is events file uploaded.')
+        return render(request, 'settings.html')
+    elif KeyWordDevicesFile.objects.count() == 0:
+        messages.error(request, 'Error: No devices file/s key words known, although there is devices file/s uploaded.')
+        return render(request, 'settings.html')
     else:
         objects_data = LoadData.objects.all()
-        perf_vars = []
+        context_init_time = 0
+        context_fin_time = 0
+        time_ms_name_events_file = KeyWordEventsFile.load().time_ms_name
+        duration_time_ms_name_events_file = KeyWordEventsFile.load().duration_time_ms_name
+        time_name_devices_file = KeyWordDevicesFile.load().time_name
+
         for obj in objects_data:
+            remove_accent(obj.csv.name)
+            csv = pd.read_csv(obj.csv.name, ";")
+            performance_variables = csv.columns.values.tolist()
+            data = {}
+
+            for i in performance_variables:
+                data[i.replace(" ", "_")] = []
+
             if obj.event_file == 0:
-                remove_accent(obj.csv.name)
-                csv = pd.read_csv(obj.csv.name, ";")
-                performance_variables = csv.columns.values.tolist()
-                for i in performance_variables:
-                    perf_vars.append(i.replace(" ", "_"))
+                for row in csv.values.tolist():
+                    for (i, j) in zip(row, performance_variables):
+                        data[j.replace(" ", "_")].append(i)
+                file_dict = process_event_data(data, obj.frequency, time_ms_name_events_file,
+                                               duration_time_ms_name_events_file)
+                context_init_time, context_fin_time = get_init_time_and_fin_time(file_dict, time_ms_name_events_file,
+                                                                                 duration_time_ms_name_events_file)
+                break
+            else:
+                for row in csv.values.tolist():
+                    for (i, j) in zip(row, performance_variables):
+                        data[j.replace(" ", "_")].append(i)
+                file_dict = process_device_data(data, 0, obj.frequency, time_name_devices_file)
+                context_init_time, context_fin_time = get_init_time_and_fin_time(file_dict, time_name_devices_file,
+                                                                                 None)
+                break
+
             # TODO: With key words and file uploaded, render init and fin time filter values.
+            #  For events file and device file.
 
     if request.method == 'POST':
         form = SettingsForm(request.POST)
@@ -64,8 +98,13 @@ def configuration(request):
         form = SettingsForm()
 
     return render(request, 'settings.html', {
-        'form': form
+        'form': form, 'init_time': context_init_time, 'fin_time': context_fin_time
     })
+
+
+# TODO
+def get_init_time_and_fin_time(file_dict, time_name, duration_time_name):
+    return 0, 0
 
 
 def delete_file(request, pk):
@@ -81,8 +120,9 @@ class FileList(ListView):
     context_object_name = 'files'
 
 
-def set_key_words(request):
+def set_key_words_events_file(request):
     # If no csv files uploaded, error message.
+
     if LoadData.objects.count() == 0:
         messages.error(request, 'Error: No data to analyse. Please upload some csv files.')
         return render(request, 'settings.html')
@@ -98,12 +138,41 @@ def set_key_words(request):
                     context_perf_vars.append(i.replace(" ", "_"))
 
     if request.method == 'POST':
-        form = KeyWordsForm(request.POST)
+        form = KeyWordsEventsForm(request.POST)
         if form.is_valid():
             form.save()
             return redirect('file_list')
     else:
-        form = KeyWordsForm()
+        form = KeyWordsEventsForm()
+    return render(request, 'uploading/set_key_words.html', {
+        'form': form, 'perf_vars': context_perf_vars
+    })
+
+
+def set_key_words_devices_file(request):
+    # If no csv files uploaded, error message.
+
+    if LoadData.objects.count() == 0:
+        messages.error(request, 'Error: No data to analyse. Please upload some csv files.')
+        return render(request, 'settings.html')
+    else:
+        objects_data = LoadData.objects.all()
+        context_perf_vars = []
+        for obj in objects_data:
+            if obj.event_file == 1:
+                remove_accent(obj.csv.name)
+                csv = pd.read_csv(obj.csv.name, ";")
+                performance_variables = csv.columns.values.tolist()
+                for i in performance_variables:
+                    context_perf_vars.append(i.replace(" ", "_"))
+
+    if request.method == 'POST':
+        form = KeyWordsDevicesForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('file_list')
+    else:
+        form = KeyWordsDevicesForm()
     return render(request, 'uploading/set_key_words.html', {
         'form': form, 'perf_vars': context_perf_vars
     })
@@ -151,20 +220,45 @@ def swap_columns(old_dict, time_name):
     return new_dict
 
 
+def is_there_events_file_uploaded(objects):
+    for obj in objects:
+        if obj.event_file == 0:
+            return True
+    return False
+
+
+def is_there_devices_file_uploaded(objects):
+    for obj in objects:
+        if obj.event_file == 1:
+            return True
+    return False
+
+
 def data_analytics(request):
     # If no csv files uploaded, error message.
     # If no settings configured, error message.
+    # If no key words of events file entered, error message.
+    # If no key words of devices file/s entered, error message.
+
+    objects_data = LoadData.objects.all()
+
     if LoadData.objects.count() == 0:
         messages.error(request, 'Error: No data to analyse. Please upload some csv files.')
+        return render(request, 'data_analytics.html')
+    elif KeyWordEventsFile.objects.count() == 0 and is_there_events_file_uploaded(objects_data):
+        messages.error(request, 'Error: No events file key words known, although there is events file uploaded.')
+        return render(request, 'data_analytics.html')
+    elif KeyWordDevicesFile.objects.count() == 0 and is_there_devices_file_uploaded(objects_data):
+        messages.error(request, 'Error: No devices file/s key words known, although there is devices file/s uploaded.')
         return render(request, 'data_analytics.html')
     elif ConfigurationSetting.objects.count() == 0:
         messages.error(request, 'Error: No settings configured. Please go to Settings and enter your configuration.')
         return render(request, 'data_analytics.html')
     else:
-        objects_data = LoadData.objects.all()
         frequency_data_table = ConfigurationSetting.load().frequency
-        time_ms_name_events_file = KeyWords.load().time_ms_name
-        duration_time_ms_name_events_file = KeyWords.load().duration_time_ms_name
+        time_ms_name_events_file = KeyWordEventsFile.load().time_ms_name
+        duration_time_ms_name_events_file = KeyWordEventsFile.load().duration_time_ms_name
+        time_name_devices_file = KeyWordDevicesFile.load().time_name
         there_is_event_file = False
         events_csv_dict = {}
         dict_devices = []
@@ -187,7 +281,7 @@ def data_analytics(request):
                 event_file_dict = process_event_data(data, obj.frequency,
                                                      time_ms_name_events_file, duration_time_ms_name_events_file)
                 dict_down_sampled_files.append(swap_columns(down_sample(event_file_dict, frequency_data_table,
-                                                            time_ms_name_events_file),
+                                                            time_ms_name_events_file, time_name_devices_file),
                                                             time_ms_name_events_file))
                 there_is_event_file = True
             else:
@@ -196,17 +290,18 @@ def data_analytics(request):
                         data[j.replace(" ", "_")].append(i)
                 if there_is_event_file:
                     value = events_csv_dict.get(time_ms_name_events_file)[0]
-                    dict_devices.append(process_device_data(data, value, obj.frequency))
+                    dict_devices.append(process_device_data(data, value, obj.frequency, time_name_devices_file))
                 else:
-                    dict_devices.append(process_device_data(data, 0, obj.frequency))
+                    dict_devices.append(process_device_data(data, 0, obj.frequency, time_name_devices_file))
 
         for i in dict_devices:
-            dict_down_sampled_files.append(down_sample(i, frequency_data_table, time_ms_name_events_file))
+            dict_down_sampled_files.append(down_sample(i, frequency_data_table, time_ms_name_events_file,
+                                                       time_name_devices_file))
 
         render_data_files = filter_time_files(dict_down_sampled_files,
                                               ConfigurationSetting.load().init_time_ms,
                                               ConfigurationSetting.load().fin_time_ms, time_ms_name_events_file,
-                                              duration_time_ms_name_events_file)
+                                              duration_time_ms_name_events_file, time_name_devices_file)
         for file in render_data_files:
             for value in file.values():
                 for i in value:
@@ -224,7 +319,7 @@ def data_analytics(request):
 
 
 def filter_time_files(dict_down_sampled_files, init_filter_time, fin_filter_time, events_time_name,
-                      events_duration_time_name):
+                      events_duration_time_name, devices_time_name):
     files_to_render = []
     for file in dict_down_sampled_files:
         df = pd.DataFrame.from_dict(file, orient="columns")
@@ -238,7 +333,7 @@ def filter_time_files(dict_down_sampled_files, init_filter_time, fin_filter_time
         for row in csv.values.tolist():
             filter_time = False
             for (i, j) in zip(row, performance_variables):
-                if j == events_time_name or j == "TIME":
+                if j == events_time_name or j == devices_time_name:
                     if fin_filter_time >= i >= init_filter_time:
                         filter_time = True
                         data[j].append(i)
@@ -292,32 +387,32 @@ def process_event_data(csv_dict, curr_frequency, events_time_name, events_durati
 
 
 # Frequency target 1000 Hz.
-def process_device_data(data_to_csv, value_first_time, curr_frequency):
+def process_device_data(data_to_csv, value_first_time, curr_frequency, time_name):
     new_array_time = []
     length_new_array = 0
 
     if curr_frequency == 100:
-        length_new_array = int(len(data_to_csv.get("TIME"))/curr_frequency)*1000+value_first_time
+        length_new_array = int(len(data_to_csv.get(time_name))/curr_frequency)*1000+value_first_time
         for n in range(value_first_time, int(round(length_new_array)), 10):
             new_array_time.append(n)
     elif curr_frequency == 10:
-        length_new_array = int(len(data_to_csv.get("TIME"))/curr_frequency)*1000+value_first_time
+        length_new_array = int(len(data_to_csv.get(time_name))/curr_frequency)*1000+value_first_time
         for t in range(value_first_time, int(length_new_array) + 100, 100):
             new_array_time.append(t)
-    data_to_csv["TIME"] = new_array_time
+    data_to_csv[time_name] = new_array_time
 
     # Maximum re-sampling = 1000 Hz
-    return max_re_sample(data_to_csv, curr_frequency, None, length_new_array, None, None)
+    return max_re_sample(data_to_csv, curr_frequency, None, length_new_array, time_name, None)
 
 
-def down_sample(dict_csv, table_frequency, events_time_name):
+def down_sample(dict_csv, table_frequency, events_time_name, devices_time_name):
     # Frequency of dict_csv data is 1000 Hz
     if table_frequency != 1000:
         average = int(round(1000/table_frequency))
         time = []
         for key in dict_csv.keys():
             downsampled = dict_csv.get(key)[0::average]
-            if key == events_time_name or key == "TIME":
+            if key == events_time_name or key == devices_time_name:
                 for i in downsampled:
                     time.append(round(i/10)*10)
                 dict_csv[key] = time
@@ -326,7 +421,7 @@ def down_sample(dict_csv, table_frequency, events_time_name):
     return dict_csv
 
 
-def max_re_sample(csv_dict, curr_freq, time_lasting, length_array, events_time_name, events_duration_time_name):
+def max_re_sample(csv_dict, curr_freq, time_lasting, length_array, time_name, events_duration_time_name):
     df = pd.DataFrame.from_dict(csv_dict, orient="columns")
     df.to_csv("data_interpol.csv")
     csv = pd.read_csv("data_interpol.csv", header=0, index_col=[0])
@@ -344,7 +439,7 @@ def max_re_sample(csv_dict, curr_freq, time_lasting, length_array, events_time_n
             for (i, j) in zip(row, performance_variables):
                 data[j].append(i)
     else:
-        interpol_events(data, csv, performance_variables, time_lasting, events_time_name, events_duration_time_name)
+        interpol_events(data, csv, performance_variables, time_lasting, time_name, events_duration_time_name)
     return data
 
 
