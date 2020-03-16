@@ -54,13 +54,6 @@ class SingletonModel(models.Model):
 class ConfigurationSetting(SingletonModel):
     init_time_ms = models.PositiveIntegerField(null=True, blank=False, help_text="Time in milliseconds.")
     fin_time_ms = models.PositiveIntegerField(null=True, blank=False, help_text="Time in milliseconds.")
-    time_ms_name = models.CharField(null=True, max_length=100, blank=False,
-                                    default="Ignore if you want to analyse only devices files",
-                                    help_text="Column name of Time in milli-seconds values (events file).")
-    duration_time_ms_name = models.CharField(null=True, max_length=100, blank=False,
-                                             default="Ignore if you want to analyse only devices files",
-                                             help_text="Column name of Time Duration in milli-seconds "
-                                                       "values (events file).")
 
     FREQ_1FS = 1
     FREQ_5FS = 5
@@ -75,5 +68,12 @@ class ConfigurationSetting(SingletonModel):
                     (FREQ_100FS, "100 Hz"),
                     (FREQ_1000FS, "1000 Hz")
                     ]
-    frequency = models.IntegerField(choices=FREQ_CHOICES, default=FREQ_5FS,
-                                    help_text="Data table frequency.")
+    frequency = models.IntegerField(choices=FREQ_CHOICES, default=FREQ_5FS, help_text="Data table frequency.")
+
+
+class KeyWords(SingletonModel):
+    time_ms_name = models.CharField(null=True, max_length=100, blank=False,
+                                    help_text="Column name of Time in milli-seconds values (events file).")
+    duration_time_ms_name = models.CharField(null=True, max_length=100, blank=False,
+                                             help_text="Column name of Time Duration in milli-seconds "
+                                                       "values (events file).")

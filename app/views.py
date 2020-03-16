@@ -2,6 +2,8 @@ import pandas as pd
 import os
 import math
 import json
+import unidecode
+import csv as lib_csv
 
 from .forms import *
 from django.views.generic import *
@@ -43,14 +45,15 @@ def configuration(request):
         return render(request, 'settings.html')
     else:
         objects_data = LoadData.objects.all()
-        context_perf_vars = []
+        perf_vars = []
         for obj in objects_data:
             if obj.event_file == 0:
+                remove_accent(obj.csv.name)
                 csv = pd.read_csv(obj.csv.name, ";")
                 performance_variables = csv.columns.values.tolist()
                 for i in performance_variables:
-                    context_perf_vars.append(i.replace(" ", "_"))
-            # TODO: render performance variables to settings form (for usability)
+                    perf_vars.append(i.replace(" ", "_"))
+            # TODO: With key words and file uploaded, render init and fin time filter values.
 
     if request.method == 'POST':
         form = SettingsForm(request.POST)
@@ -78,6 +81,34 @@ class FileList(ListView):
     context_object_name = 'files'
 
 
+def set_key_words(request):
+    # If no csv files uploaded, error message.
+    if LoadData.objects.count() == 0:
+        messages.error(request, 'Error: No data to analyse. Please upload some csv files.')
+        return render(request, 'settings.html')
+    else:
+        objects_data = LoadData.objects.all()
+        context_perf_vars = []
+        for obj in objects_data:
+            if obj.event_file == 0:
+                remove_accent(obj.csv.name)
+                csv = pd.read_csv(obj.csv.name, ";")
+                performance_variables = csv.columns.values.tolist()
+                for i in performance_variables:
+                    context_perf_vars.append(i.replace(" ", "_"))
+
+    if request.method == 'POST':
+        form = KeyWordsForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('file_list')
+    else:
+        form = KeyWordsForm()
+    return render(request, 'uploading/set_key_words.html', {
+        'form': form, 'perf_vars': context_perf_vars
+    })
+
+
 def upload_csv_file(request):
     if request.method == 'POST':
         form = FileForm(request.POST, request.FILES)
@@ -94,6 +125,32 @@ def upload_csv_file(request):
     })
 
 
+def remove_accent(feed):
+    csv_f = open(feed, encoding='latin-1', mode='r')
+    csv_str = csv_f.read()
+    csv_str_removed_accent = unidecode.unidecode(csv_str)
+    csv_f.close()
+    csv_f = open(feed, 'w')
+    csv_f.write(csv_str_removed_accent)
+
+
+def swap_columns(old_dict, time_name):
+    # In the EVENTS file put the time in milliseconds column in the first place of the csv,
+    # in order to do the time filter well.
+    new_dict = {}
+
+    for key in old_dict.keys():
+        if key == time_name:
+            new_dict[key] = old_dict[key]
+            del old_dict[key]
+            break
+
+    for key in old_dict.keys():
+        new_dict[key] = old_dict[key]
+
+    return new_dict
+
+
 def data_analytics(request):
     # If no csv files uploaded, error message.
     # If no settings configured, error message.
@@ -106,8 +163,8 @@ def data_analytics(request):
     else:
         objects_data = LoadData.objects.all()
         frequency_data_table = ConfigurationSetting.load().frequency
-        time_ms_name_events_file = ConfigurationSetting.load().time_ms_name
-        duration_time_ms_name_events_file = ConfigurationSetting.load().duration_time_ms_name
+        time_ms_name_events_file = KeyWords.load().time_ms_name
+        duration_time_ms_name_events_file = KeyWords.load().duration_time_ms_name
         there_is_event_file = False
         events_csv_dict = {}
         dict_devices = []
@@ -115,6 +172,7 @@ def data_analytics(request):
 
         for obj in objects_data:
             data = {}
+            remove_accent(obj.csv.name)
             csv = pd.read_csv(obj.csv.name, ";")
             performance_variables = csv.columns.values.tolist()
 
@@ -128,8 +186,9 @@ def data_analytics(request):
                 events_csv_dict = data
                 event_file_dict = process_event_data(data, obj.frequency,
                                                      time_ms_name_events_file, duration_time_ms_name_events_file)
-                dict_down_sampled_files.append(down_sample(event_file_dict, frequency_data_table,
-                                                           time_ms_name_events_file))
+                dict_down_sampled_files.append(swap_columns(down_sample(event_file_dict, frequency_data_table,
+                                                            time_ms_name_events_file),
+                                                            time_ms_name_events_file))
                 there_is_event_file = True
             else:
                 for row in csv.values.tolist():
@@ -213,7 +272,7 @@ def float_data_to_int_data(csv_dict, events_duration_time_name):
     """Handle float numbers except nan"""
 
 
-# Frequency 1000 Hz.
+# Frequency target 1000 Hz.
 def process_event_data(csv_dict, curr_frequency, events_time_name, events_duration_time_name):
     float_data_to_int_data(csv_dict, events_duration_time_name)
     time_lasting = csv_dict[events_duration_time_name]
@@ -232,7 +291,7 @@ def process_event_data(csv_dict, curr_frequency, events_time_name, events_durati
     return max_re_sample(csv_dict, curr_frequency, time_lasting, 0, events_time_name, events_duration_time_name)
 
 
-# Frequency 1000 Hz.
+# Frequency target 1000 Hz.
 def process_device_data(data_to_csv, value_first_time, curr_frequency):
     new_array_time = []
     length_new_array = 0

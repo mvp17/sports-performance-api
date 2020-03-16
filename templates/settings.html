@@ -15,7 +15,7 @@
                     </ul>
                 {% else %}
         </div>
-        <!-- Put info messages here. Messages for time filters, perform var names. -->
+        <!-- TODO: Put info messages here. Messages for time filters. -->
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             {{ form|crispy }}

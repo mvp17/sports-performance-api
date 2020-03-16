@@ -1,10 +1,10 @@
 {% extends 'uploading/file_list.html' %}
-{% block Title %} <title>Upload file</title> {% endblock %}
+{% block Title %}<title>Sign up</title>{% endblock %}
 {% load crispy_forms_tags %}
 
-{% block info %}
+{% block content %}
     <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
-    <div class="container" style="margin-top: 30px">
+    <div class="container" style="margin-top: 40px">
         <div class="form-group">
             {% if messages %}
                 <ul class="messages">
@@ -15,11 +15,16 @@
                 </ul>
             {% endif %}
         </div>
+        <div class="container" style="margin: 25px 200px">
+        {% for var in perf_vars %}
+                <p> {{ var }}
+        {% endfor %}
+        </div>
 
-        <form method="post" enctype="multipart/form-data">
+        <form method="post">
             {% csrf_token %}
             {{ form|crispy }}
-            <button type="submit" class="btn btn-success">Upload</button>
+            <button type="submit" class="btn btn-success"> Next </button>
         </form>
     </div>
 

@@ -3,10 +3,14 @@
 
 {% block info %}
     <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+
     <div class="container" style="margin-top: 30px">
         <p>
             <a href="{% url 'upload_file' %}" class="btn btn-primary">
                 Upload csv file
+            </a>
+            <a href="{% url 'key_words' %}" class="btn btn-warning">
+                Set key words
             </a>
         </p>
         <table class="table mb-0">
