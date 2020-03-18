@@ -40,15 +40,17 @@ def signup(request):
 
 def configuration(request):
     # If no csv files uploaded, error message.
-    # If no key words entered, error message.
+    # If no key words entered, while there are files uploaded of each type, error message.
+
+    objects_data = LoadData.objects.all()
 
     if LoadData.objects.count() == 0:
         messages.error(request, 'Error: No data to analyse. Please upload some csv files.')
         return render(request, 'settings.html')
-    elif KeyWordEventsFile.objects.count() == 0:
+    elif KeyWordEventsFile.objects.count() == 0 and is_there_events_file_uploaded(objects_data):
         messages.error(request, 'Error: No events file key words known, although there is events file uploaded.')
         return render(request, 'settings.html')
-    elif KeyWordDevicesFile.objects.count() == 0:
+    elif KeyWordDevicesFile.objects.count() == 0 and is_there_devices_file_uploaded(objects_data):
         messages.error(request, 'Error: No devices file/s key words known, although there is devices file/s uploaded.')
         return render(request, 'settings.html')
     else:
@@ -74,20 +76,20 @@ def configuration(request):
                         data[j.replace(" ", "_")].append(i)
                 file_dict = process_event_data(data, obj.frequency, time_ms_name_events_file,
                                                duration_time_ms_name_events_file)
-                context_init_time, context_fin_time = get_init_time_and_fin_time(file_dict, time_ms_name_events_file,
-                                                                                 duration_time_ms_name_events_file)
-                break
+                context_init_time, context_fin_time = get_init_time_and_fin_time(file_dict, time_ms_name_events_file)
             else:
                 for row in csv.values.tolist():
                     for (i, j) in zip(row, performance_variables):
                         data[j.replace(" ", "_")].append(i)
-                file_dict = process_device_data(data, 0, obj.frequency, time_name_devices_file)
-                context_init_time, context_fin_time = get_init_time_and_fin_time(file_dict, time_name_devices_file,
-                                                                                 None)
-                break
 
-            # TODO: With key words and file uploaded, render init and fin time filter values.
-            #  For events file and device file.
+                if is_there_events_file_uploaded(objects_data):
+                    events_csv_dict = get_events_csv_dict(objects_data)
+                    value = events_csv_dict.get(time_ms_name_events_file)[0]
+                    file_dict = process_device_data(data, value, obj.frequency, time_name_devices_file)
+                    context_init_time, context_fin_time = get_init_time_and_fin_time(file_dict, time_name_devices_file)
+                else:
+                    file_dict = process_device_data(data, 0, obj.frequency, time_name_devices_file)
+                    context_init_time, context_fin_time = get_init_time_and_fin_time(file_dict, time_name_devices_file)
 
     if request.method == 'POST':
         form = SettingsForm(request.POST)
@@ -97,14 +99,43 @@ def configuration(request):
     else:
         form = SettingsForm()
 
+    if context_init_time == 0 and context_fin_time == 0:
+        messages.error(request, 'Error in fetching filtering initial time and final time')
+
     return render(request, 'settings.html', {
         'form': form, 'init_time': context_init_time, 'fin_time': context_fin_time
     })
 
 
-# TODO
-def get_init_time_and_fin_time(file_dict, time_name, duration_time_name):
-    return 0, 0
+def get_events_csv_dict(objects_data):
+    data = {}
+
+    for obj in objects_data:
+        remove_accent(obj.csv.name)
+        csv = pd.read_csv(obj.csv.name, ";")
+        performance_variables = csv.columns.values.tolist()
+
+        for i in performance_variables:
+            data[i.replace(" ", "_")] = []
+
+        if obj.event_file == 0:
+            for row in csv.values.tolist():
+                for (i, j) in zip(row, performance_variables):
+                    data[j.replace(" ", "_")].append(i)
+
+    return data
+
+
+def get_init_time_and_fin_time(file_dict, time_name):
+    init_time = 0
+    fin_time = 0
+
+    for key in file_dict.keys():
+        if key == time_name:
+            init_time = file_dict[key][0]
+            fin_time = file_dict[key][-1]
+
+    return init_time, fin_time
 
 
 def delete_file(request, pk):
@@ -122,20 +153,11 @@ class FileList(ListView):
 
 def set_key_words_events_file(request):
     # If no csv files uploaded, error message.
-
     if LoadData.objects.count() == 0:
         messages.error(request, 'Error: No data to analyse. Please upload some csv files.')
         return render(request, 'settings.html')
     else:
-        objects_data = LoadData.objects.all()
-        context_perf_vars = []
-        for obj in objects_data:
-            if obj.event_file == 0:
-                remove_accent(obj.csv.name)
-                csv = pd.read_csv(obj.csv.name, ";")
-                performance_variables = csv.columns.values.tolist()
-                for i in performance_variables:
-                    context_perf_vars.append(i.replace(" ", "_"))
+        context_perf_vars = set_key_words(0, request)
 
     if request.method == 'POST':
         form = KeyWordsEventsForm(request.POST)
@@ -144,6 +166,7 @@ def set_key_words_events_file(request):
             return redirect('file_list')
     else:
         form = KeyWordsEventsForm()
+
     return render(request, 'uploading/set_key_words.html', {
         'form': form, 'perf_vars': context_perf_vars
     })
@@ -151,20 +174,11 @@ def set_key_words_events_file(request):
 
 def set_key_words_devices_file(request):
     # If no csv files uploaded, error message.
-
     if LoadData.objects.count() == 0:
         messages.error(request, 'Error: No data to analyse. Please upload some csv files.')
         return render(request, 'settings.html')
     else:
-        objects_data = LoadData.objects.all()
-        context_perf_vars = []
-        for obj in objects_data:
-            if obj.event_file == 1:
-                remove_accent(obj.csv.name)
-                csv = pd.read_csv(obj.csv.name, ";")
-                performance_variables = csv.columns.values.tolist()
-                for i in performance_variables:
-                    context_perf_vars.append(i.replace(" ", "_"))
+        context_perf_vars = set_key_words(1, request)
 
     if request.method == 'POST':
         form = KeyWordsDevicesForm(request.POST)
@@ -176,6 +190,28 @@ def set_key_words_devices_file(request):
     return render(request, 'uploading/set_key_words.html', {
         'form': form, 'perf_vars': context_perf_vars
     })
+
+
+def set_key_words(is_events_or_devices_file, request):
+    objects_data = LoadData.objects.all()
+    context_perf_vars = []
+
+    if is_there_devices_file_uploaded(objects_data) and is_events_or_devices_file == 0 \
+            and not is_there_events_file_uploaded(objects_data):
+        messages.error(request, 'Error. There are not events files uploaded.')
+    elif is_there_events_file_uploaded(objects_data) and is_events_or_devices_file == 1 \
+            and not is_there_devices_file_uploaded(objects_data):
+        messages.error(request, 'Error. There are not devices files uploaded')
+    else:
+        for obj in objects_data:
+            if obj.event_file == is_events_or_devices_file:
+                remove_accent(obj.csv.name)
+                csv = pd.read_csv(obj.csv.name, ";")
+                performance_variables = csv.columns.values.tolist()
+                for i in performance_variables:
+                    context_perf_vars.append(i.replace(" ", "_"))
+
+    return context_perf_vars
 
 
 def upload_csv_file(request):
@@ -259,8 +295,6 @@ def data_analytics(request):
         time_ms_name_events_file = KeyWordEventsFile.load().time_ms_name
         duration_time_ms_name_events_file = KeyWordEventsFile.load().duration_time_ms_name
         time_name_devices_file = KeyWordDevicesFile.load().time_name
-        there_is_event_file = False
-        events_csv_dict = {}
         dict_devices = []
         dict_down_sampled_files = []
 
@@ -275,27 +309,26 @@ def data_analytics(request):
 
             if obj.event_file == 0:
                 for row in csv.values.tolist():
-                    for (i, j) in zip(row, performance_variables):
-                        data[j.replace(" ", "_")].append(i)
-                events_csv_dict = data
+                    for (element_row, element_perf_var) in zip(row, performance_variables):
+                        data[element_perf_var.replace(" ", "_")].append(element_row)
                 event_file_dict = process_event_data(data, obj.frequency,
                                                      time_ms_name_events_file, duration_time_ms_name_events_file)
                 dict_down_sampled_files.append(swap_columns(down_sample(event_file_dict, frequency_data_table,
                                                             time_ms_name_events_file, time_name_devices_file),
                                                             time_ms_name_events_file))
-                there_is_event_file = True
             else:
                 for row in csv.values.tolist():
-                    for (i, j) in zip(row, performance_variables):
-                        data[j.replace(" ", "_")].append(i)
-                if there_is_event_file:
+                    for (element_row, element_perf_var) in zip(row, performance_variables):
+                        data[element_perf_var.replace(" ", "_")].append(element_row)
+                if is_there_events_file_uploaded(objects_data):
+                    events_csv_dict = get_events_csv_dict(performance_variables)
                     value = events_csv_dict.get(time_ms_name_events_file)[0]
                     dict_devices.append(process_device_data(data, value, obj.frequency, time_name_devices_file))
                 else:
                     dict_devices.append(process_device_data(data, 0, obj.frequency, time_name_devices_file))
 
-        for i in dict_devices:
-            dict_down_sampled_files.append(down_sample(i, frequency_data_table, time_ms_name_events_file,
+        for device_data in dict_devices:
+            dict_down_sampled_files.append(down_sample(device_data, frequency_data_table, time_ms_name_events_file,
                                                        time_name_devices_file))
 
         render_data_files = filter_time_files(dict_down_sampled_files,
@@ -304,9 +337,9 @@ def data_analytics(request):
                                               duration_time_ms_name_events_file, time_name_devices_file)
         for file in render_data_files:
             for value in file.values():
-                for i in value:
-                    if isinstance(i, float) and math.isnan(i):
-                        value[value.index(i)] = 'null'
+                for element in value:
+                    if isinstance(element, float) and math.isnan(element):
+                        value[value.index(element)] = 'null'
 
         vars_perf = []
         for file in render_data_files:
@@ -328,18 +361,18 @@ def filter_time_files(dict_down_sampled_files, init_filter_time, fin_filter_time
         os.remove("filtered_time_files.csv")
         performance_variables = csv.columns.values.tolist()
         data = {}
-        for i in performance_variables:
-            data[i] = []
+        for var in performance_variables:
+            data[var] = []
         for row in csv.values.tolist():
             filter_time = False
-            for (i, j) in zip(row, performance_variables):
-                if j == events_time_name or j == devices_time_name:
-                    if fin_filter_time >= i >= init_filter_time:
+            for (element_row, element_perf_var) in zip(row, performance_variables):
+                if element_perf_var == events_time_name or element_perf_var == devices_time_name:
+                    if fin_filter_time >= element_row >= init_filter_time:
                         filter_time = True
-                        data[j].append(i)
+                        data[element_perf_var].append(element_row)
                 else:
                     if filter_time:
-                        data[j].append(i)
+                        data[element_perf_var].append(element_row)
         float_data_to_int_data(data, events_duration_time_name)
         files_to_render.append(data)
     return files_to_render
@@ -349,18 +382,18 @@ def float_data_to_int_data(csv_dict, events_duration_time_name):
     keys_floats = {}
     """Handle float numbers except nan"""
     for key in csv_dict.keys():
-        for i in csv_dict[key]:
-            if isinstance(i, float):
-                if key not in keys_floats.keys() and not math.isnan(i):
+        for value in csv_dict[key]:
+            if isinstance(value, float):
+                if key not in keys_floats.keys() and not math.isnan(value):
                     keys_floats[key] = []
                 if key in keys_floats.keys():
-                    if math.isnan(i):
+                    if math.isnan(value):
                         if key == events_duration_time_name:
                             keys_floats[key].append(0)
                         else:
-                            keys_floats[key].append(i)
+                            keys_floats[key].append(value)
                     else:
-                        keys_floats[key].append(int(math.floor(i)))
+                        keys_floats[key].append(int(math.floor(value)))
 
     for key in keys_floats:
         csv_dict[key] = keys_floats[key]
@@ -393,12 +426,12 @@ def process_device_data(data_to_csv, value_first_time, curr_frequency, time_name
 
     if curr_frequency == 100:
         length_new_array = int(len(data_to_csv.get(time_name))/curr_frequency)*1000+value_first_time
-        for n in range(value_first_time, int(round(length_new_array)), 10):
-            new_array_time.append(n)
+        for time in range(value_first_time, int(round(length_new_array)), 10):
+            new_array_time.append(time)
     elif curr_frequency == 10:
         length_new_array = int(len(data_to_csv.get(time_name))/curr_frequency)*1000+value_first_time
-        for t in range(value_first_time, int(length_new_array) + 100, 100):
-            new_array_time.append(t)
+        for time in range(value_first_time, int(length_new_array) + 100, 100):
+            new_array_time.append(time)
     data_to_csv[time_name] = new_array_time
 
     # Maximum re-sampling = 1000 Hz
@@ -413,8 +446,8 @@ def down_sample(dict_csv, table_frequency, events_time_name, devices_time_name):
         for key in dict_csv.keys():
             downsampled = dict_csv.get(key)[0::average]
             if key == events_time_name or key == devices_time_name:
-                for i in downsampled:
-                    time.append(round(i/10)*10)
+                for element in downsampled:
+                    time.append(round(element/10)*10)
                 dict_csv[key] = time
             else:
                 dict_csv[key] = downsampled
@@ -428,16 +461,16 @@ def max_re_sample(csv_dict, curr_freq, time_lasting, length_array, time_name, ev
     os.remove("data_interpol.csv")
     performance_variables = csv.columns.values.tolist()
     data = {}
-    for i in performance_variables:
-        data[i] = []
+    for var in performance_variables:
+        data[var] = []
     if curr_freq == 100:
         interpol_devices(data, csv, performance_variables, 10, length_array)
     elif curr_freq == 10:
         interpol_devices(data, csv, performance_variables, 100, length_array)
     elif curr_freq == 1000:
         for row in csv.values.tolist():
-            for (i, j) in zip(row, performance_variables):
-                data[j].append(i)
+            for (element_row, element_perf_var) in zip(row, performance_variables):
+                data[element_perf_var].append(element_row)
     else:
         interpol_events(data, csv, performance_variables, time_lasting, time_name, events_duration_time_name)
     return data
@@ -445,32 +478,32 @@ def max_re_sample(csv_dict, curr_freq, time_lasting, length_array, time_name, ev
 
 def interpol_events(data, csv, perf_vars, time_lasting, events_time_name, events_duration_time_name):
     for row, time in zip(csv.values.tolist(), time_lasting):
-        for (i, j) in zip(row, perf_vars):
-            if isinstance(i, int) and j == events_time_name:
-                extreme_time_value_to_interpolate = i
+        for (element_row, element_perf_var) in zip(row, perf_vars):
+            if isinstance(element_row, int) and element_perf_var == events_time_name:
+                extreme_time_value_to_interpolate = element_row
                 # Interpolate time
-                for t in range(extreme_time_value_to_interpolate, time + extreme_time_value_to_interpolate):
-                    data[j].append(t)
+                for new_time in range(extreme_time_value_to_interpolate, time + extreme_time_value_to_interpolate):
+                    data[element_perf_var].append(new_time)
             else:
                 # Interpolate str value
-                for z in range(time):
-                    data[j].append(i)
+                for str_value in range(time):
+                    data[element_perf_var].append(element_row)
     float_data_to_int_data(data, events_duration_time_name)
 
 
 def interpol_devices(data, csv, perf_vars, interpol_value, limit_length):
     extreme_time_value_to_interpolate = 0
     for row in csv.values.tolist():
-        for (i, j) in zip(row, perf_vars):
-            if isinstance(i, int):
-                extreme_time_value_to_interpolate = i
+        for (element_row, element_perf_var) in zip(row, perf_vars):
+            if isinstance(element_row, int):
+                extreme_time_value_to_interpolate = element_row
             if not (extreme_time_value_to_interpolate + interpol_value > limit_length):
-                if not isinstance(i, int):
-                    for z in range(interpol_value):
+                if not isinstance(element_row, int):
+                    for str_value in range(interpol_value):
                         # Interpolate value str
-                        data[j].append(i)
-                if isinstance(i, int):
+                        data[element_perf_var].append(element_row)
+                if isinstance(element_row, int):
                     # Interpolate time
                     for time in range(extreme_time_value_to_interpolate,
                                       extreme_time_value_to_interpolate + interpol_value):
-                        data[j].append(time)
+                        data[element_perf_var].append(time)

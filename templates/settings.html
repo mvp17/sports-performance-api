@@ -15,7 +15,20 @@
                     </ul>
                 {% else %}
         </div>
-        <!-- TODO: Put info messages here. Messages for time filters. -->
+        <div class="container" style="margin: 50px 100px">
+        <p>
+            <h6 class="alert alert-primary" style="width: 500px; margin: 15px">
+            The initial time for filtering in this session is: {{ init_time }} </h6>
+        <p>
+            <h6 class="alert alert-primary" style="width: 500px; margin: 15px">
+            The final time for filtering in this session is: {{ fin_time }} </h6>
+        <p>
+            <h5 class="alert alert-warning" style="width: 500px; margin: 15px">
+            You MUST do the filtering between the two integer values of above.
+            These values are also included in the filtering </h5>
+
+        </div>
+
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             {{ form|crispy }}

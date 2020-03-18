@@ -12,6 +12,13 @@
      {% load static %}
     <link rel="stylesheet" href="{% static '/style/base.css' %}">
 
+    <style>
+    img {
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    </style>
 </head>
 <body>
 
@@ -61,28 +68,14 @@
 
                     <h1> Welcome home!</h1>
                     <div class="container" style="margin: 70px 10px ">
-                        <h3 style="text-transform: uppercase; color: #21cc1b;  font-weight: bold; text-align: center"> Conditions of use</h3>
                         <div class="container" style="margin: 25px 70px ">
-                            <h5 class="alert alert-warning"> CSV files</h5>
-                            <div class="container" style="margin: 25px 45px ">
-                                <h6 class="alert alert-danger"> COLUMN NAMES in both file types must NOT contain ACCENTS.</h6>
-                                <h6 class="alert alert-danger"> The format for saving the files must be of the type
-                                    "CSV (delimited by commas) (* .csv)".</h6>
-                                <h6 class="alert alert-danger"> The names specified in SETTINGS MUST match with the names of each column
-                                                                with the related names in each loaded file.</h6>
-                                <h6 class="alert alert-danger"> The device file must have the time column name as "TIME".
-                                    That column name with NO WHITE SPACES.</h6>
-                            </div>
-                            <h5 class="alert alert-warning"> Through the web</h5>
-                            <div class="container" style="margin: 25px 45px ">
-                                <h6 class="alert alert-danger"> Load EVENT FILE FIRST in case TIME series of DEVICE FILES has to START with
-                                the FIRST time VALUE of EVENT file. WITHOUT event file first loaded (first in file list),
-                                device files' TIME series will START by 0.</h6>
-                                <h6 class="alert alert-danger"> SETTINGS initial FILTER TIME for data table should be GREATER than
-                                    or EQUAL to the first time value (milliseconds) of EVENTS FILE.</h6>
-                            </div>
-
+                            <h5 class="alert alert-warning"> The format for saving the files must be of the type
+                                    "CSV (delimited by commas) (* .csv)".</h5>
                         </div>
+                    <div>
+                        {% load static%}
+                        <img src="{% static 'img/welcome_image.jpg' %}" alt="" style="width:79%">
+                    </div>
                     </div>
 
                 {% endblock %}

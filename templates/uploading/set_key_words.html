@@ -1,5 +1,5 @@
 {% extends 'uploading/file_list.html' %}
-{% block Title %}<title>Sign up</title>{% endblock %}
+{% block Title %}<title>Set key words</title>{% endblock %}
 {% load crispy_forms_tags %}
 
 {% block content %}
@@ -10,23 +10,27 @@
                 <ul class="messages">
                 {% for message in messages %}
                     <p>
-                        <h4 class="alert alert-danger"> {{ message }}</h4>
+                        <h5 class="alert alert-danger"> {{ message }}</h5>
                 {% endfor %}
                 </ul>
+                {% else %}
+                    <div class="container" style="margin: 50px 100px">
+                        <p>
+                            <h6 class="alert alert-primary" style="width: 500px; margin: 15px">
+                            The performance variables names for this file type are: </h6>
+                    {% for var in perf_vars %}
+                            <p style="margin-bottom: 3px"> {{ var }}
+                    {% endfor %}
+                    </div>
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        <button type="submit" class="btn btn-success"> Next </button>
+                    </form>
+                    </div>
             {% endif %}
         </div>
-        <div class="container" style="margin: 25px 200px">
 
-        {% for var in perf_vars %}
-                <p> {{ var }}
-        {% endfor %}
-        </div>
-
-        <form method="post">
-            {% csrf_token %}
-            {{ form|crispy }}
-            <button type="submit" class="btn btn-success"> Next </button>
-        </form>
     </div>
 
 {% endblock %}
