@@ -92,12 +92,13 @@
                     <div class = "row">
                         <div class="column">
                             <div class="container" style="margin: 20px 70px ">
-                                <h5 class="alert alert-warning" style="width: 700px; margin: 15px"> The format for saving the files must be of the type
-                                        "CSV (delimited by commas) (* .csv)".</h5>
+                                <h6 class="alert alert-warning" style="width: 700px; margin: 15px"> The format for saving the files must be of the type
+                                        "CSV (delimited by commas) (* .csv)".</h6>
+
                                 {% if is_there_configuration == 1 %}
-                                    <h5 class="alert alert-warning" style="width: 700px; margin: 15px">
+                                    <h6 class="alert alert-warning" style="width: 700px; margin: 15px">
                                         There are settings configured. The parameters are as followed. Please if they are not
-                                        for your analysis session go to settings and change them.</h5>
+                                        for your analysis session go to settings and change them.</h6>
                                     <h6 class="alert alert-primary" style="width: 300px; margin: 15px">
                                         The initial filtering time is: {{ init_time }}</h6>
                                     <h6 class="alert alert-primary" style="width: 300px; margin: 15px">
@@ -105,6 +106,23 @@
                                     <h6 class="alert alert-primary" style="width: 300px; margin: 15px">
                                         The settings frequency is: {{ frequency }}</h6>
                                 {% endif %}
+                                {% if is_there_key_words_events == 1 %}
+                                    <h6 class="alert alert-warning" style="width: 700px; margin: 15px">
+                                        There are key words for events file registered. Please if they are not
+                                        for your analysis session go to the file list section and change them.</h6>
+                                    <h6 class="alert alert-primary" style="width: 300px; margin: 15px">
+                                        The key word time name is {{ time_ms_name_events }}</h6>
+                                    <h6 class="alert alert-primary" style="width: 300px; margin: 15px">
+                                        The key word duration time name is {{ duration_time_ms_name_events }}</h6>
+                                {% endif %}
+                                {% if is_there_key_words_devices == 1 %}
+                                    <h6 class="alert alert-warning" style="width: 700px; margin: 15px">
+                                        There are key words for devices file/s registered. Please if they are not
+                                        for your analysis session go to the file list section and change them.</h6>
+                                    <h6 class="alert alert-primary" style="width: 300px; margin: 15px">
+                                        The key word time name is {{ time_name_devices }}</h6>
+                                {% endif %}
+
                             </div>
                         </div>
                         <div class="column">
