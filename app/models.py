@@ -43,7 +43,7 @@ class SingletonModel(models.Model):
         super(SingletonModel, self).save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        pass
+        super(SingletonModel, self).delete(*args, **kwargs)
 
     @classmethod
     def load(cls):

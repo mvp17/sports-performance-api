@@ -4,6 +4,7 @@
 
 {% block content %}
     <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+
     <div class="container" style="margin-top: 40px">
         <div class="form-group">
             {% if messages %}
@@ -13,11 +14,14 @@
                         <h5 class="alert alert-danger"> {{ message }}</h5>
                 {% endfor %}
                 </ul>
+                <a href="{% url 'file_list' %}" class="btn btn-primary">
+                    Go to File List
+                </a>
                 {% else %}
                     <div class="container" style="margin: 50px 100px">
                         <p>
                             <h6 class="alert alert-primary" style="width: 500px; margin: 15px">
-                            The performance variables names for this file type are: </h6>
+                            The column names for this file type are: </h6>
                     {% for var in perf_vars %}
                             <p style="margin-bottom: 3px"> {{ var }}
                     {% endfor %}

@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block Title %}<title xmlns="">Deleting Account</title> {% endblock %}
+
+{% block info %}
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <div class="container" style="margin-top: 30px">
+        <h5 class="alert alert-warning" style="width: 700px; margin-top: 70px">
+            Do you want to delete your account?
+        </h5>
+
+        <a href="{% url 'inactive_user' user.username %}" class="btn btn-danger" style="margin-bottom: 50px"> Delete account </a>
+
+    </div>
+
+{% endblock %}

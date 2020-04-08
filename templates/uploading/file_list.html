@@ -16,30 +16,30 @@
                 Set devices file/s key words
             </a>
         </p>
-        <table class="table mb-0">
-        <thead>
-            <tr>
-                <th>Title</th>
-                <th>Athlete</th>
-                <th>CSV File</th>
-                <th>Delete</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for file in files %}
+        <table class="table">
+            <thead>
                 <tr>
-                    <td>{{ file.title }}</td>
-                    <td>{{ file.athlete }}</td>
-                    <td>{{ file.csv }}</td>
-                    <td>
-                        <form method="post" action="{% url 'delete_file' file.pk %}">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-danger">Delete</button>
-                        </form>
-                    </td>
+                    <th>Title</th>
+                    <th>Athlete</th>
+                    <th>CSV File</th>
+                    <th>Delete</th>
                 </tr>
-            {% endfor %}
-        </tbody>
+            </thead>
+            <tbody>
+                {% for file in files %}
+                    <tr>
+                        <td>{{ file.title }}</td>
+                        <td>{{ file.athlete }}</td>
+                        <td>{{ file.csv }}</td>
+                        <td>
+                            <form method="post" action="{% url 'delete_file' file.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
         </table>
     </div>
 

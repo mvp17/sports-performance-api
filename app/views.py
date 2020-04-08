@@ -14,10 +14,51 @@ from django.urls import reverse_lazy
 from django.views import generic
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
 
 
 def home(request):
-    return render(request, 'base.html')
+    init_time = 0
+    fin_time = 0
+    frequency = 0
+    is_there_configuration = 0
+
+    if ConfigurationSetting.objects.count() != 0:
+        is_there_configuration = 1
+        frequency = ConfigurationSetting.load().frequency
+        init_time = ConfigurationSetting.load().init_time_ms
+        fin_time = ConfigurationSetting.load().fin_time_ms
+
+    return render(request, 'base.html', {
+        'init_time': init_time, 'fin_time': fin_time, 'frequency': frequency,
+        'is_there_configuration': is_there_configuration
+    })
+
+
+# "Deleting" user account
+def inactive_user(request, username):
+    user = User.objects.get(username=username)
+    # It is recommended to set this flag to False instead of deleting accounts;
+    # that way, if your applications have any foreign keys to users, the foreign keys won't break.
+    user.is_active = False
+    user.save()
+    return redirect('/')
+
+
+def user_profile(request):
+    return render(request, 'registration/user_profile.html')
+
+
+def exit_session(request):
+    return render(request, 'exit.html')
+
+
+def delete_session(request):
+    KeyWordEventsFile.load().delete()
+    KeyWordDevicesFile.load().delete()
+    ConfigurationSetting.load().delete()
+
+    return redirect('exit')
 
 
 class LogIn(LoginRequiredMixin, generic.CreateView):
@@ -211,7 +252,8 @@ def set_key_words(is_events_or_devices_file, request):
                 for i in performance_variables:
                     context_perf_vars.append(i.replace(" ", "_"))
 
-    return context_perf_vars
+    # Remove duplicate values of the list
+    return set(context_perf_vars)
 
 
 def upload_csv_file(request):
@@ -292,6 +334,8 @@ def data_analytics(request):
         return render(request, 'data_analytics.html')
     else:
         frequency_data_table = ConfigurationSetting.load().frequency
+        init_time = ConfigurationSetting.load().init_time_ms
+        fin_time = ConfigurationSetting.load().fin_time_ms
         time_ms_name_events_file = KeyWordEventsFile.load().time_ms_name
         duration_time_ms_name_events_file = KeyWordEventsFile.load().duration_time_ms_name
         time_name_devices_file = KeyWordDevicesFile.load().time_name
@@ -313,6 +357,14 @@ def data_analytics(request):
                         data[element_perf_var.replace(" ", "_")].append(element_row)
                 event_file_dict = process_event_data(data, obj.frequency,
                                                      time_ms_name_events_file, duration_time_ms_name_events_file)
+                file_init_time, file_fin_time = get_init_time_and_fin_time(event_file_dict, time_ms_name_events_file)
+
+                if not (fin_time <= file_fin_time and init_time >= file_init_time):
+                    messages.error(request, 'Error: It is not possible to analyse data '
+                                            'with the settings time parameters. Please re-enter the '
+                                            'settings time parameters.')
+                    return render(request, 'data_analytics.html')
+
                 dict_down_sampled_files.append(swap_columns(down_sample(event_file_dict, frequency_data_table,
                                                             time_ms_name_events_file, time_name_devices_file),
                                                             time_ms_name_events_file))
@@ -321,13 +373,21 @@ def data_analytics(request):
                     for (element_row, element_perf_var) in zip(row, performance_variables):
                         data[element_perf_var.replace(" ", "_")].append(element_row)
                 if is_there_events_file_uploaded(objects_data):
-                    events_csv_dict = get_events_csv_dict(performance_variables)
+                    events_csv_dict = get_events_csv_dict(objects_data)
                     value = events_csv_dict.get(time_ms_name_events_file)[0]
                     dict_devices.append(process_device_data(data, value, obj.frequency, time_name_devices_file))
                 else:
                     dict_devices.append(process_device_data(data, 0, obj.frequency, time_name_devices_file))
 
         for device_data in dict_devices:
+            file_init_time, file_fin_time = get_init_time_and_fin_time(device_data, time_name_devices_file)
+
+            if not (fin_time <= file_fin_time and init_time >= file_init_time):
+                messages.error(request, 'Error: It is not possible to analyse data '
+                                        'with the settings time parameters. Please re-enter the '
+                                        'settings time parameters.')
+                return render(request, 'data_analytics.html')
+
             dict_down_sampled_files.append(down_sample(device_data, frequency_data_table, time_ms_name_events_file,
                                                        time_name_devices_file))
 

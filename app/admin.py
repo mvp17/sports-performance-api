@@ -3,3 +3,5 @@ from .models import *
 
 admin.site.register(LoadData)
 admin.site.register(ConfigurationSetting)
+admin.site.register(KeyWordEventsFile)
+admin.site.register(KeyWordDevicesFile)

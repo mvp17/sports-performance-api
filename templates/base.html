@@ -18,6 +18,28 @@
       margin-left: auto;
       margin-right: auto;
     }
+    /* Three image containers (use 25% for four, and 50% for two, etc) */
+    .column {
+      float: left;
+      width: 33.33%;
+      padding: 5px;
+    }
+
+    /* Clear floats after image containers */
+    .row::after {
+      content: "";
+      clear: both;
+      display: table;
+    }
+
+    .row {
+      display: flex;
+    }
+
+    .column {
+      flex: 33.33%;
+      padding: 5px;
+    }
     </style>
 </head>
 <body>
@@ -32,30 +54,30 @@
                     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
                         <div class="collapse navbar-collapse" id="navbarSupportedContent">
                             <ul class="navbar-nav mr-auto">
-                                <li class="nav-item">
+                                <li class="nav-item active">
                                     <a class=" nav-link" href="{% url 'home' %}"> Home</a>
                                 </li>
 
-                                <li class="nav-item">
+                                <li class="nav-item active">
                                     <a class=" nav-link" href="{% url 'settings' %}"> Settings</a>
                                 </li>
 
-                                <li class="nav-item">
+                                <li class="nav-item active">
                                     <a class=" nav-link" href="{% url 'file_list' %}"> Files</a>
                                 </li>
 
-                                <li class="nav-item">
+                                <li class="nav-item active">
                                     <a class=" nav-link" href="{% url 'data analytics' %}"> Data analytics</a>
                                 </li>
 
                             </ul>
                             <ul class="navbar-nav margin-right: auto">
-                                <li class="nav-item active" >
-                                    <a class="navbar-brand" href="#">{{ user.username }}</a>
+                                <li class="nav-item" >
+                                    <a class="navbar-brand" href="{% url 'user_profile' %}"> Profile: {{ user.username }}</a>
                                 </li>
 
-                                <li class="nav-item">
-                                    <a class=" nav-link" href="{% url 'logout' %}"> Logout</a>
+                                <li class="nav-item active">
+                                    <a class=" nav-link" href="{% url 'exit' %}"> Exit</a>
                                 </li>
 
                             </ul>
@@ -67,17 +89,29 @@
                 {% block info %}
 
                     <h1> Welcome home!</h1>
-                    <div class="container" style="margin: 70px 10px ">
-                        <div class="container" style="margin: 25px 70px ">
-                            <h5 class="alert alert-warning"> The format for saving the files must be of the type
-                                    "CSV (delimited by commas) (* .csv)".</h5>
+                    <div class = "row">
+                        <div class="column">
+                            <div class="container" style="margin: 20px 70px ">
+                                <h5 class="alert alert-warning" style="width: 700px; margin: 15px"> The format for saving the files must be of the type
+                                        "CSV (delimited by commas) (* .csv)".</h5>
+                                {% if is_there_configuration == 1 %}
+                                    <h5 class="alert alert-warning" style="width: 700px; margin: 15px">
+                                        There are settings configured. The parameters are as followed. Please if they are not
+                                        for your analysis session go to settings and change them.</h5>
+                                    <h6 class="alert alert-primary" style="width: 300px; margin: 15px">
+                                        The initial filtering time is: {{ init_time }}</h6>
+                                    <h6 class="alert alert-primary" style="width: 300px; margin: 15px">
+                                        The final filtering time is: {{ fin_time }}</h6>
+                                    <h6 class="alert alert-primary" style="width: 300px; margin: 15px">
+                                        The settings frequency is: {{ frequency }}</h6>
+                                {% endif %}
+                            </div>
                         </div>
-                    <div>
-                        {% load static%}
-                        <img src="{% static 'img/welcome_image.jpg' %}" alt="" style="width:79%">
+                        <div class="column">
+                            {% load static%}
+                            <img src="{% static 'img/welcome_image.jpg' %}" alt="" style="width:100%">
+                        </div>
                     </div>
-                    </div>
-
                 {% endblock %}
             {% endif %}
 
