@@ -27,17 +27,16 @@ def home(request):
     time_ms_name_events = ""
     duration_time_ms_name_events = ""
     time_name_devices = ""
-
-    if ConfigurationSetting.objects.count() != 0:
+    if ConfigurationSetting.objects.count() == 1:
         is_there_configuration = 1
         frequency = ConfigurationSetting.load().frequency
         init_time = ConfigurationSetting.load().init_time_ms
         fin_time = ConfigurationSetting.load().fin_time_ms
-    if KeyWordEventsFile.objects.count() != 0:
+    if KeyWordEventsFile.objects.count() == 1:
         is_there_key_words_events = 1
         time_ms_name_events = KeyWordEventsFile.load().time_ms_name
         duration_time_ms_name_events = KeyWordEventsFile.load().duration_time_ms_name
-    if KeyWordDevicesFile.objects.count() != 0:
+    if KeyWordDevicesFile.objects.count() == 1:
         is_there_key_words_devices = 1
         time_name_devices = KeyWordDevicesFile.load().time_name
 
@@ -64,7 +63,13 @@ def user_profile(request):
 
 
 def exit_session(request):
-    return render(request, 'exit.html')
+    is_there_configuration = 0
+    if KeyWordEventsFile.objects.count() == 1 or KeyWordDevicesFile.objects.count() == 1 or \
+            ConfigurationSetting.objects.count() == 1:
+        is_there_configuration = 1
+    return render(request, 'exit.html', {
+        "is_there_configuration": is_there_configuration
+    })
 
 
 def delete_session(request):
@@ -112,9 +117,14 @@ def configuration(request):
         objects_data = LoadData.objects.all()
         context_init_time = 0
         context_fin_time = 0
-        time_ms_name_events_file = KeyWordEventsFile.load().time_ms_name
-        duration_time_ms_name_events_file = KeyWordEventsFile.load().duration_time_ms_name
-        time_name_devices_file = KeyWordDevicesFile.load().time_name
+        time_ms_name_events_file = ""
+        duration_time_ms_name_events_file = ""
+        time_name_devices_file = ""
+        if KeyWordEventsFile.objects.count() == 1:
+            time_ms_name_events_file = KeyWordEventsFile.load().time_ms_name
+            duration_time_ms_name_events_file = KeyWordEventsFile.load().duration_time_ms_name
+        if KeyWordDevicesFile.objects.count() == 1:
+            time_name_devices_file = KeyWordDevicesFile.load().time_name
 
         for obj in objects_data:
             remove_accent(obj.csv.name)
@@ -210,7 +220,7 @@ def set_key_words_events_file(request):
     # If no csv files uploaded, error message.
     if LoadData.objects.count() == 0:
         messages.error(request, 'Error: No data to analyse. Please upload some csv files.')
-        return render(request, 'settings.html')
+        return render(request, 'uploading/set_key_words.html')
     else:
         context_perf_vars = set_key_words(0, request)
 
@@ -231,7 +241,7 @@ def set_key_words_devices_file(request):
     # If no csv files uploaded, error message.
     if LoadData.objects.count() == 0:
         messages.error(request, 'Error: No data to analyse. Please upload some csv files.')
-        return render(request, 'settings.html')
+        return render(request, 'uploading/set_key_words.html')
     else:
         context_perf_vars = set_key_words(1, request)
 
@@ -350,9 +360,14 @@ def data_analytics(request):
         frequency_data_table = ConfigurationSetting.load().frequency
         init_time = ConfigurationSetting.load().init_time_ms
         fin_time = ConfigurationSetting.load().fin_time_ms
-        time_ms_name_events_file = KeyWordEventsFile.load().time_ms_name
-        duration_time_ms_name_events_file = KeyWordEventsFile.load().duration_time_ms_name
-        time_name_devices_file = KeyWordDevicesFile.load().time_name
+        time_ms_name_events_file = ""
+        duration_time_ms_name_events_file = ""
+        time_name_devices_file = ""
+        if KeyWordEventsFile.objects.count() == 1 and is_there_events_file_uploaded(objects_data):
+            time_ms_name_events_file = KeyWordEventsFile.load().time_ms_name
+            duration_time_ms_name_events_file = KeyWordEventsFile.load().duration_time_ms_name
+        if KeyWordDevicesFile.objects.count() == 1 and is_there_devices_file_uploaded(objects_data):
+            time_name_devices_file = KeyWordDevicesFile.load().time_name
         dict_devices = []
         dict_down_sampled_files = []
 
@@ -379,8 +394,7 @@ def data_analytics(request):
                                             'settings time parameters.')
                     return render(request, 'data_analytics.html')
 
-                dict_down_sampled_files.append(swap_columns(down_sample(event_file_dict, frequency_data_table,
-                                                            time_ms_name_events_file, time_name_devices_file),
+                dict_down_sampled_files.append(swap_columns(down_sample(event_file_dict, frequency_data_table),
                                                             time_ms_name_events_file))
             else:
                 for row in csv.values.tolist():
@@ -402,8 +416,7 @@ def data_analytics(request):
                                         'settings time parameters.')
                 return render(request, 'data_analytics.html')
 
-            dict_down_sampled_files.append(down_sample(device_data, frequency_data_table, time_ms_name_events_file,
-                                                       time_name_devices_file))
+            dict_down_sampled_files.append(down_sample(device_data, frequency_data_table))
 
         render_data_files = filter_time_files(dict_down_sampled_files,
                                               ConfigurationSetting.load().init_time_ms,
@@ -454,7 +467,7 @@ def filter_time_files(dict_down_sampled_files, init_filter_time, fin_filter_time
 
 def float_data_to_int_data(csv_dict, events_duration_time_name):
     keys_floats = {}
-    """Handle float numbers except nan"""
+    # Handle float numbers except nan
     for key in csv_dict.keys():
         for value in csv_dict[key]:
             if isinstance(value, float):
@@ -471,7 +484,6 @@ def float_data_to_int_data(csv_dict, events_duration_time_name):
 
     for key in keys_floats:
         csv_dict[key] = keys_floats[key]
-    """Handle float numbers except nan"""
 
 
 # Frequency target 1000 Hz.
@@ -512,19 +524,24 @@ def process_device_data(data_to_csv, value_first_time, curr_frequency, time_name
     return max_re_sample(data_to_csv, curr_frequency, None, length_new_array, time_name, None)
 
 
-def down_sample(dict_csv, table_frequency, events_time_name, devices_time_name):
+def down_sample(dict_csv, table_frequency):
     # Frequency of dict_csv data is 1000 Hz
     if table_frequency != 1000:
         average = int(round(1000/table_frequency))
-        time = []
         for key in dict_csv.keys():
             downsampled = dict_csv.get(key)[0::average]
+            # Reduce to ten in the downsample of time.
+            # If done, poor bad display of time values
+            # Many repeated time values which match different performance vars values.
+            """
             if key == events_time_name or key == devices_time_name:
                 for element in downsampled:
-                    time.append(round(element/10)*10)
+                    time.append(round(element / 10) * 10)
                 dict_csv[key] = time
             else:
                 dict_csv[key] = downsampled
+                """
+            dict_csv[key] = downsampled
     return dict_csv
 
 
@@ -581,3 +598,25 @@ def interpol_devices(data, csv, perf_vars, interpol_value, limit_length):
                     for time in range(extreme_time_value_to_interpolate,
                                       extreme_time_value_to_interpolate + interpol_value):
                         data[element_perf_var].append(time)
+
+
+def chart(request):
+    objects_data = LoadData.objects.all()
+    if LoadData.objects.count() == 0:
+        messages.error(request, 'Error: No data to analyse. Please upload some csv events files.')
+        return render(request, 'chart.html')
+    elif KeyWordEventsFile.objects.count() == 0 and is_there_events_file_uploaded(objects_data):
+        messages.error(request, 'Error: No events file key words known, although there is events file uploaded.')
+        return render(request, 'chart.html')
+    else:
+        data = [37, 70, 100, 125, 200, 213, 140, 86]  # get_data()
+        # Performance variables as key words for events file.
+        labels = ['January', 'February', 'March', 'April', 'dvdv', 'vdvds', 'vvdvvd', '4grehht']
+        return render(request, 'chart.html', {
+            "data": json.dumps(data), "labels": json.dumps(labels)
+        })
+
+
+# Data of which perf variables as key words for events file
+def get_data():
+    pass

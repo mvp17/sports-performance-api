@@ -16,6 +16,7 @@ urlpatterns = [
     path('files/<int:pk>', delete_file, name='delete_file'),
 
     path('data_analytics', data_analytics, name='data analytics'),
+    path('chart', chart, name='chart'),
 
     path('exit', exit_session, name='exit'),
     path('exit/delete', delete_session, name='delete_session'),

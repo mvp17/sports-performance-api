@@ -15,7 +15,6 @@
                 </ul>
             {% endif %}
         </div>
-
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             {{ form|crispy }}

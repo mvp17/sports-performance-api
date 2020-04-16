@@ -2,9 +2,8 @@
 {% block Title %}<title>Set key words</title>{% endblock %}
 {% load crispy_forms_tags %}
 
-{% block content %}
+{% block info %}
     <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
-
     <div class="container" style="margin-top: 40px">
         <div class="form-group">
             {% if messages %}
@@ -14,23 +13,23 @@
                         <h5 class="alert alert-danger"> {{ message }}</h5>
                 {% endfor %}
                 </ul>
-                <a href="{% url 'file_list' %}" class="btn btn-primary">
-                    Go to File List
-                </a>
                 {% else %}
-                    <div class="container" style="margin: 50px 100px">
-                        <p>
-                            <h6 class="alert alert-primary" style="width: 500px; margin: 15px">
-                            The column names for this file type are: </h6>
-                    {% for var in perf_vars %}
-                            <p style="margin-bottom: 3px"> {{ var }}
-                    {% endfor %}
-                    </div>
-                    <form method="post">
-                        {% csrf_token %}
-                        {{ form|crispy }}
-                        <button type="submit" class="btn btn-success"> Next </button>
-                    </form>
+                    <div class='row'>
+                        <div class="column">
+                        <h5 class="alert alert-primary" style="width: 475px; margin: 15px">
+                            The column names for this file type are: </h5>
+                            {% for var in perf_vars %}
+                                    <p style="margin-bottom: 3px"> {{ var }}
+                            {% endfor %}
+                        </div>
+                        <div class="column">
+                            <h5 class="alert alert-success" style="width: 475px; margin: 15px"> Fill out the form with the corresponding info: </h5>
+                            <form method="post">
+                                {% csrf_token %}
+                                {{ form|crispy }}
+                                <button type="submit" class="btn btn-success"> Next </button>
+                            </form>
+                        </div>
                     </div>
             {% endif %}
         </div>

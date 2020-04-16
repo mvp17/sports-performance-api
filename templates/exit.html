@@ -5,14 +5,15 @@
     <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
 
     <div class="container" style="margin-top: 30px">
-
-        <h5 class="alert alert-warning" style="width: 700px; margin-top: 70px">
-            Do you want to delete your session for a new analysis?
-        </h5>
-        <h6 class="alert alert-primary" style="width: 500px">
-            Your key words and your configuration settings.
-        </h6>
-        <a href="{% url 'delete_session' %}" class="btn btn-danger" style="margin-bottom: 50px"> Delete </a>
+        {% if is_there_configuration == 1 %}
+            <h5 class="alert alert-warning" style="width: 700px; margin-top: 70px">
+                Do you want to delete your session for a new analysis?
+            </h5>
+            <h6 class="alert alert-primary" style="width: 500px">
+                Your key words and your configuration settings.
+            </h6>
+            <a href="{% url 'delete_session' %}" class="btn btn-danger" style="margin-bottom: 50px"> Delete </a>
+        {% endif %}
 
         <h5 class="alert alert-warning" style="width: 700px">
             Are you sure you want to leave ?

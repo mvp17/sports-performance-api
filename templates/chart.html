@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block Title %}<title xmlns="">Chart</title> {% endblock %}
+
+{% block info %}
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <div class="container" style="margin-top: 30px">
+        <div class="form-group" style="margin: 25px 20px">
+            {% if messages %}
+                <ul class="messages">
+                {% for message in messages %}
+                    <p>
+                        <h5 class="alert alert-danger"> {{ message }}</h5>
+                {% endfor %}
+                </ul>
+            {% else %}
+        </div>
+        <div class='row'>
+            <div class="column" style="margin-right: 100px">
+                    <canvas id="myChart" width="400" height="400"></canvas>
+            </div>
+            <div class="column">
+                <canvas id="myChart2" width="400" height="400"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let labels = [];
+        let data = [];
+        let ctx = document.getElementById('myChart').getContext('2d');
+        let ctx2 = document.getElementById('myChart2').getContext('2d');
+        data = {{ data|safe }};
+        labels = {{ labels|safe}};
+        setChart(ctx,'bar', labels, data ); // bar, line, radar, pie, polarArea
+        setChart(ctx2, 'radar', labels, data);
+
+        function setChart(context, category, labels, data) {
+            new Chart(context, {
+                // The type of chart we want to create
+                type: category,
+
+                // The data for our dataset
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'My First dataset',
+                        backgroundColor: 'rgb(255, 159, 64)',
+                        borderColor: 'rgb(255, 159, 64)',
+                        data: data
+                    }]
+                },
+
+                // Configuration options go here
+                options: {
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: true
+                            }
+                        }]
+                    }
+                }
+            });
+        }
+
+    </script>
+
+{% endif %}
+{% endblock %}

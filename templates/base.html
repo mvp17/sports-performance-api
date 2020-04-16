@@ -8,6 +8,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
 
      {% load static %}
     <link rel="stylesheet" href="{% static '/style/base.css' %}">
@@ -70,6 +71,10 @@
                                     <a class=" nav-link" href="{% url 'data analytics' %}"> Data analytics</a>
                                 </li>
 
+                                <li class="nav-item active">
+                                    <a class=" nav-link" href="{% url 'chart' %}"> Chart</a>
+                                </li>
+
                             </ul>
                             <ul class="navbar-nav margin-right: auto">
                                 <li class="nav-item" >
@@ -99,12 +104,12 @@
                                     <h6 class="alert alert-warning" style="width: 700px; margin: 15px">
                                         There are settings configured. The parameters are as followed. Please if they are not
                                         for your analysis session go to settings and change them.</h6>
+                                    <h6 class="alert alert-primary" style="width: 380px; margin: 15px">
+                                        The initial filtering time is: {{ init_time }} milliseconds</h6>
+                                    <h6 class="alert alert-primary" style="width: 380px; margin: 15px">
+                                        The final filtering time is: {{ fin_time }} milliseconds</h6>
                                     <h6 class="alert alert-primary" style="width: 300px; margin: 15px">
-                                        The initial filtering time is: {{ init_time }}</h6>
-                                    <h6 class="alert alert-primary" style="width: 300px; margin: 15px">
-                                        The final filtering time is: {{ fin_time }}</h6>
-                                    <h6 class="alert alert-primary" style="width: 300px; margin: 15px">
-                                        The settings frequency is: {{ frequency }}</h6>
+                                        The settings frequency is: {{ frequency }} Hz</h6>
                                 {% endif %}
                                 {% if is_there_key_words_events == 1 %}
                                     <h6 class="alert alert-warning" style="width: 700px; margin: 15px">
