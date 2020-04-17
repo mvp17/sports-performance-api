@@ -15,27 +15,45 @@
                 </ul>
             {% else %}
         </div>
+        <div class="container" style="margin: 25px 200px">
+            <input type="checkbox" class="checks" value="bar"> Bar Chart
+            <input type="checkbox" class="checks" value="line"> Line Chart
+            <input type="checkbox" class="checks" value="radar"> Radar Chart
+            <input type="checkbox" class="checks" value="pie"> Pie Chart
+            <input type="checkbox" class="checks" value="polarArea"> Polar Area Chart
+            <button class="btn btn-primary" onclick="checksToChart();"> Save</button>
+        </div>
         <div class='row'>
-            <div class="column" style="margin-right: 100px">
-                    <canvas id="myChart" width="400" height="400"></canvas>
-            </div>
-            <div class="column">
-                <canvas id="myChart2" width="400" height="400"></canvas>
-            </div>
+            {% for var in chart_vars %}
+                <h5> {{ var }} </h5>
+                <div class="column" style="margin-right: 100px">
+                        <canvas id={{ var }} width="400" height="400"></canvas>
+                </div>
+            {% endfor %}
         </div>
     </div>
 
     <script>
-        let labels = [];
-        let data = [];
-        let ctx = document.getElementById('myChart').getContext('2d');
-        let ctx2 = document.getElementById('myChart2').getContext('2d');
-        data = {{ data|safe }};
-        labels = {{ labels|safe}};
-        setChart(ctx,'bar', labels, data ); // bar, line, radar, pie, polarArea
-        setChart(ctx2, 'radar', labels, data);
+        function checksToChart() {
+            let lists_labels = [];
+            let lists_data = [];
+            let chart_vars = [];
+            let contexts = [];
 
-        function setChart(context, category, labels, data) {
+            chart_vars = {{ chart_vars|safe }};
+            for (let i = 0; i < chart_vars.length; i++)
+                contexts.push(document.getElementById(chart_vars[i]).getContext('2d'));
+            lists_data = {{ lists_data|safe }};
+            lists_labels = {{ lists_labels|safe}};
+            // contexts.length = lists_labels.length = lists_data.length = chart_vars.length
+
+            let category = getCheck();
+            for (let i = 0; i < contexts.length; i++){
+                setChart(contexts[i], category, lists_labels[i], lists_data[i], chart_vars[i], getColors(lists_labels[i]));
+            }
+        }
+
+        function setChart(context, category, labels, data, label, backColor) {
             new Chart(context, {
                 // The type of chart we want to create
                 type: category,
@@ -44,9 +62,9 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'My First dataset',
-                        backgroundColor: 'rgb(255, 159, 64)',
-                        borderColor: 'rgb(255, 159, 64)',
+                        label: label,
+                        backgroundColor: backColor,
+                        borderColor: backColor,
                         data: data
                     }]
                 },
@@ -59,9 +77,59 @@
                                 beginAtZero: true
                             }
                         }]
+                    },
+                    legend: {
+                        display: false
                     }
                 }
             });
+        }
+
+        function getColors(labels){
+            let totalColors = ['rgb(255, 99, 132)',
+                      'rgb(54, 162, 235)',
+                      'rgb(255, 206, 86)',
+                      'rgb(75, 192, 192)',
+                      'rgb(153, 102, 255)',
+                      'rgb(255, 159, 64)',
+            ];
+            let colors = [];
+
+            let j = 0;
+            for (let i = 0; i < labels.length; i++){
+                if (j === totalColors.length){
+                    j = 0;
+                    colors.push(totalColors[j]);
+                    j++;
+                }
+                else {
+                    colors.push(totalColors[j]);
+                    j++;
+                }
+            }
+
+            for (let i = 0; i < colors.length; i++){
+                console.log(colors[i])
+            }
+            return colors
+        }
+
+        function getCheck() {
+            let checks = document.getElementsByClassName('checks');
+            let str = [];
+
+            for (let i = 0; i < checks.length; i++) {
+            if (checks[i].checked === true)
+                str.push(checks[i].value);
+            }
+
+            if (str.length > 1){
+                alert("Error. Two or more chart types have been checked.");
+                location.reload();
+            }
+            else {
+                return str[0];
+            }
         }
 
     </script>

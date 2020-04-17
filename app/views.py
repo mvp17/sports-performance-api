@@ -26,6 +26,7 @@ def home(request):
     is_there_key_words_devices = 0
     time_ms_name_events = ""
     duration_time_ms_name_events = ""
+    chart_perf_vars = ""
     time_name_devices = ""
     if ConfigurationSetting.objects.count() == 1:
         is_there_configuration = 1
@@ -36,6 +37,7 @@ def home(request):
         is_there_key_words_events = 1
         time_ms_name_events = KeyWordEventsFile.load().time_ms_name
         duration_time_ms_name_events = KeyWordEventsFile.load().duration_time_ms_name
+        chart_perf_vars = KeyWordEventsFile.load().chart_perf_vars
     if KeyWordDevicesFile.objects.count() == 1:
         is_there_key_words_devices = 1
         time_name_devices = KeyWordDevicesFile.load().time_name
@@ -43,8 +45,9 @@ def home(request):
     return render(request, 'base.html', {
         'init_time': init_time, 'fin_time': fin_time, 'frequency': frequency,
         'is_there_configuration': is_there_configuration, 'time_ms_name_events': time_ms_name_events,
-        'duration_time_ms_name_events': duration_time_ms_name_events, 'time_name_devices': time_name_devices,
-        'is_there_key_words_events': is_there_key_words_events, 'is_there_key_words_devices': is_there_key_words_devices
+        'duration_time_ms_name_events': duration_time_ms_name_events, 'chart_perf_vars': chart_perf_vars,
+        'time_name_devices': time_name_devices, 'is_there_key_words_events': is_there_key_words_events,
+        'is_there_key_words_devices': is_there_key_words_devices
     })
 
 
@@ -132,20 +135,20 @@ def configuration(request):
             performance_variables = csv.columns.values.tolist()
             data = {}
 
-            for i in performance_variables:
-                data[i.replace(" ", "_")] = []
+            for perf_var in performance_variables:
+                data[perf_var.replace(" ", "_")] = []
 
             if obj.event_file == 0:
                 for row in csv.values.tolist():
-                    for (i, j) in zip(row, performance_variables):
-                        data[j.replace(" ", "_")].append(i)
+                    for (element_row, perf_var) in zip(row, performance_variables):
+                        data[perf_var.replace(" ", "_")].append(element_row)
                 file_dict = process_event_data(data, obj.frequency, time_ms_name_events_file,
                                                duration_time_ms_name_events_file)
                 context_init_time, context_fin_time = get_init_time_and_fin_time(file_dict, time_ms_name_events_file)
             else:
                 for row in csv.values.tolist():
-                    for (i, j) in zip(row, performance_variables):
-                        data[j.replace(" ", "_")].append(i)
+                    for (element_row, perf_var) in zip(row, performance_variables):
+                        data[perf_var.replace(" ", "_")].append(element_row)
 
                 if is_there_events_file_uploaded(objects_data):
                     events_csv_dict = get_events_csv_dict(objects_data)
@@ -180,13 +183,13 @@ def get_events_csv_dict(objects_data):
         csv = pd.read_csv(obj.csv.name, ";")
         performance_variables = csv.columns.values.tolist()
 
-        for i in performance_variables:
-            data[i.replace(" ", "_")] = []
+        for perf_var in performance_variables:
+            data[perf_var.replace(" ", "_")] = []
 
         if obj.event_file == 0:
             for row in csv.values.tolist():
-                for (i, j) in zip(row, performance_variables):
-                    data[j.replace(" ", "_")].append(i)
+                for (element_row, perf_var) in zip(row, performance_variables):
+                    data[perf_var.replace(" ", "_")].append(element_row)
 
     return data
 
@@ -273,8 +276,8 @@ def set_key_words(is_events_or_devices_file, request):
                 remove_accent(obj.csv.name)
                 csv = pd.read_csv(obj.csv.name, ";")
                 performance_variables = csv.columns.values.tolist()
-                for i in performance_variables:
-                    context_perf_vars.append(i.replace(" ", "_"))
+                for perf_var in performance_variables:
+                    context_perf_vars.append(perf_var.replace(" ", "_"))
 
     # Remove duplicate values of the list
     return set(context_perf_vars)
@@ -377,8 +380,8 @@ def data_analytics(request):
             csv = pd.read_csv(obj.csv.name, ";")
             performance_variables = csv.columns.values.tolist()
 
-            for i in performance_variables:
-                data[i.replace(" ", "_")] = []
+            for perf_var in performance_variables:
+                data[perf_var.replace(" ", "_")] = []
 
             if obj.event_file == 0:
                 for row in csv.values.tolist():
@@ -394,7 +397,9 @@ def data_analytics(request):
                                             'settings time parameters.')
                     return render(request, 'data_analytics.html')
 
-                dict_down_sampled_files.append(swap_columns(down_sample(event_file_dict, frequency_data_table),
+                dict_down_sampled_files.append(swap_columns(down_sample(event_file_dict, frequency_data_table,
+                                                                        time_ms_name_events_file,
+                                                                        time_name_devices_file),
                                                             time_ms_name_events_file))
             else:
                 for row in csv.values.tolist():
@@ -416,7 +421,8 @@ def data_analytics(request):
                                         'settings time parameters.')
                 return render(request, 'data_analytics.html')
 
-            dict_down_sampled_files.append(down_sample(device_data, frequency_data_table))
+            dict_down_sampled_files.append(down_sample(device_data, frequency_data_table, time_ms_name_events_file,
+                                                       time_name_devices_file))
 
         render_data_files = filter_time_files(dict_down_sampled_files,
                                               ConfigurationSetting.load().init_time_ms,
@@ -475,6 +481,9 @@ def float_data_to_int_data(csv_dict, events_duration_time_name):
                     keys_floats[key] = []
                 if key in keys_floats.keys():
                     if math.isnan(value):
+                        # If a value list (column) from the csv has a NaN value
+                        # and that column is the duration time (milliseconds), change it to value 0 because it matters
+                        # above the others. The other NaN values of the csv will be changed to 'null' value.
                         if key == events_duration_time_name:
                             keys_floats[key].append(0)
                         else:
@@ -524,23 +533,19 @@ def process_device_data(data_to_csv, value_first_time, curr_frequency, time_name
     return max_re_sample(data_to_csv, curr_frequency, None, length_new_array, time_name, None)
 
 
-def down_sample(dict_csv, table_frequency):
+def down_sample(dict_csv, table_frequency, events_time_name, devices_time_name):
     # Frequency of dict_csv data is 1000 Hz
     if table_frequency != 1000:
         average = int(round(1000/table_frequency))
+        time = []
         for key in dict_csv.keys():
             downsampled = dict_csv.get(key)[0::average]
-            # Reduce to ten in the downsample of time.
-            # If done, poor bad display of time values
-            # Many repeated time values which match different performance vars values.
-            """
             if key == events_time_name or key == devices_time_name:
                 for element in downsampled:
                     time.append(round(element / 10) * 10)
                 dict_csv[key] = time
             else:
                 dict_csv[key] = downsampled
-                """
             dict_csv[key] = downsampled
     return dict_csv
 
@@ -609,14 +614,77 @@ def chart(request):
         messages.error(request, 'Error: No events file key words known, although there is events file uploaded.')
         return render(request, 'chart.html')
     else:
-        data = [37, 70, 100, 125, 200, 213, 140, 86]  # get_data()
+        lists_labels, lists_data, chart_vars = get_info_chart(objects_data)
+        # data = [37, 70, 100, 125, 200, 213, 140, 86, 150]
         # Performance variables as key words for events file.
-        labels = ['January', 'February', 'March', 'April', 'dvdv', 'vdvds', 'vvdvvd', '4grehht']
+        # labels = ['January', 'February', 'March', 'April', 'dvdv', 'vdvds', 'vvdvvd', '4grehht', 'slnvdsndknu']
         return render(request, 'chart.html', {
-            "data": json.dumps(data), "labels": json.dumps(labels)
+            "lists_data": json.dumps(lists_data), "lists_labels": json.dumps(lists_labels), "chart_vars": chart_vars
         })
 
 
 # Data of which perf variables as key words for events file
-def get_data():
-    pass
+def get_info_chart(objects_data):
+    events_data = get_events_csv_dict(objects_data)
+    chart_perf_vars = ""
+    duration_time_name_events_ms = ""
+
+    if KeyWordEventsFile.objects.count() == 1 and is_there_events_file_uploaded(objects_data):
+        chart_perf_vars = KeyWordEventsFile.load().chart_perf_vars
+        duration_time_name_events_ms = KeyWordEventsFile.load().duration_time_ms_name
+
+    float_data_to_int_data(events_data, duration_time_name_events_ms)
+
+    # Worst case
+    chart_perf_vars = chart_perf_vars.replace(" ", "")
+    perf_vars_list = chart_perf_vars.split(",")
+    sub_events = {}
+
+    for key in events_data.keys():
+        if key in perf_vars_list:
+            sub_events[key] = events_data[key]
+
+    list_labels_with_their_data = get_data_and_labels(sub_events.values())
+    lists_labels, lists_data = split_labels_datas(list_labels_with_their_data)
+
+    return lists_labels, lists_data, perf_vars_list
+
+
+def get_data_and_labels(values):
+    list_different_values = {}
+    list_labels_data = []
+
+    for element in values:
+        for value in element:
+            if value not in list_different_values:
+                # Don't count with the NaN values
+                if isinstance(value, float) and math.isnan(value):
+                    continue
+                list_different_values[value] = 1
+            else:
+                list_different_values[value] += 1
+        list_labels_data.append(list_different_values)
+        list_different_values = {}
+
+    return list_labels_data
+
+
+def split_labels_datas(list_labels_with_their_data):
+    lists_labels = []
+    lists_data = []
+    list_labels = []
+    list_data = []
+
+    for element in list_labels_with_their_data:
+
+        for key in element.keys():
+            list_labels.append(key)
+        lists_labels.append(list_labels)
+        list_labels = []
+
+        for value in element.values():
+            list_data.append(value)
+        lists_data.append(list_data)
+        list_data = []
+
+    return lists_labels, lists_data

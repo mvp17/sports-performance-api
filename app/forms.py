@@ -17,7 +17,7 @@ class SettingsForm(forms.ModelForm):
 class KeyWordsEventsForm(forms.ModelForm):
     class Meta:
         model = KeyWordEventsFile
-        fields = ('time_ms_name', 'duration_time_ms_name')
+        fields = ('time_ms_name', 'duration_time_ms_name', 'chart_perf_vars')
 
 
 class KeyWordsDevicesForm(forms.ModelForm):
