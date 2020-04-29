@@ -109,7 +109,7 @@
             downloadLink.click();
         }
 
-        function export_table_to_csv(html, filename) {
+        function export_table_to_csv(filename) {
             let csv = [];
             let rows = document.querySelectorAll("table tr");
 
@@ -127,8 +127,7 @@
         }
 
         document.querySelector(".example").addEventListener("click", function () {
-            let html = document.querySelector("table").outerHTML;
-            export_table_to_csv(html, "table.csv");
+            export_table_to_csv("table.csv");
         });
         </script>
 

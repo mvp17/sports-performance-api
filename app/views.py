@@ -277,10 +277,11 @@ def set_key_words(is_events_or_devices_file, request):
                 csv = pd.read_csv(obj.csv.name, ";")
                 performance_variables = csv.columns.values.tolist()
                 for perf_var in performance_variables:
-                    context_perf_vars.append(perf_var.replace(" ", "_"))
+                    perf_var = perf_var.replace(" ", "_")
+                    if perf_var not in context_perf_vars:
+                        context_perf_vars.append(perf_var)
 
-    # Remove duplicate values of the list
-    return set(context_perf_vars)
+    return context_perf_vars
 
 
 def upload_csv_file(request):
@@ -615,9 +616,8 @@ def chart(request):
         return render(request, 'chart.html')
     else:
         lists_labels, lists_data, chart_vars = get_info_chart(objects_data)
-        # data = [37, 70, 100, 125, 200, 213, 140, 86, 150]
-        # Performance variables as key words for events file.
-        # labels = ['January', 'February', 'March', 'April', 'dvdv', 'vdvds', 'vvdvvd', '4grehht', 'slnvdsndknu']
+        lists_labels = to_format_csv(lists_labels)
+
         return render(request, 'chart.html', {
             "lists_data": json.dumps(lists_data), "lists_labels": json.dumps(lists_labels), "chart_vars": chart_vars
         })
@@ -645,7 +645,7 @@ def get_info_chart(objects_data):
             sub_events[key] = events_data[key]
 
     list_labels_with_their_data = get_data_and_labels(sub_events.values())
-    lists_labels, lists_data = split_labels_datas(list_labels_with_their_data)
+    lists_labels, lists_data = split_labels_data(list_labels_with_their_data)
 
     return lists_labels, lists_data, perf_vars_list
 
@@ -669,7 +669,7 @@ def get_data_and_labels(values):
     return list_labels_data
 
 
-def split_labels_datas(list_labels_with_their_data):
+def split_labels_data(list_labels_with_their_data):
     lists_labels = []
     lists_data = []
     list_labels = []
@@ -688,3 +688,17 @@ def split_labels_datas(list_labels_with_their_data):
         list_data = []
 
     return lists_labels, lists_data
+
+
+def to_format_csv(lists_labels):
+    new_lists_labels = []
+    new_list_labels = []
+
+    for list_label in lists_labels:
+        for label in list_label:
+            if isinstance(label, str):
+                if ',' in label:
+                    label = label.replace(',', '.')
+                    new_list_labels.append(label)
+        new_lists_labels.append(new_list_labels)
+    return new_lists_labels

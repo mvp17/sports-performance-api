@@ -4,6 +4,34 @@
 {% block info %}
     <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <style>
+        /* Container for flexboxes */
+        .row {
+          display: flex;
+          flex-wrap: wrap;
+        }
+
+        /* Create four equal columns */
+        .column {
+          flex: 25%;
+          padding: 20px;
+        }
+
+        /* On screens that are 992px wide or less, go from four columns to two columns */
+        @media screen and (max-width: 992px) {
+          .column {
+            flex: 50%;
+          }
+        }
+
+        /* On screens that are 600px wide or less, make the columns stack on top of each other instead of next to each other */
+        @media screen and (max-width: 600px) {
+          .row {
+            flex-direction: column;
+          }
+        }
+    </style>
+
     <div class="container" style="margin-top: 30px">
         <div class="form-group" style="margin: 25px 20px">
             {% if messages %}
@@ -25,15 +53,70 @@
         </div>
         <div class='row'>
             {% for var in chart_vars %}
-                <h5> {{ var }} </h5>
-                <div class="column" style="margin-right: 100px">
-                        <canvas id={{ var }} width="400" height="400"></canvas>
+                <div class="column" >
+                    <h5> {{ var }} </h5>
+                    <canvas id={{ var }} width="400" height="400"></canvas>
+                    <button class="btn btn-success {{ var }}">Export data to CSV</button>
                 </div>
+
             {% endfor %}
         </div>
     </div>
 
     <script>
+
+        function exportDataToCSV(filename, data, labels) {
+            let json = convertArraysToJson(data, labels);
+            let csv = convertToCSV(json);
+            csv = csv.replace(/,/g, ";");
+            // For decimal value labels.
+            csv = csv.replace(/\./g, ",");
+            download_csv(csv, filename);
+        }
+        
+        function convertArraysToJson(data, labels) {
+            let obj = {};
+            let result = [];
+            for (let i = 0; i < labels.length; i++)
+               obj[labels[i]] = data[i];
+
+            result.push(obj);
+            return result;
+        }
+
+        function convertToCSV(arr) {
+            const array = [Object.keys(arr[0])].concat(arr);
+
+            return array.map(it => {
+                return Object.values(it).toString()
+                }).join('\n')
+        }
+
+        function download_csv(csv, filename) {
+            let csvFile;
+            let downloadLink;
+
+            // CSV FILE
+            csvFile = new Blob([csv], {type: "text/csv"});
+
+            // Download link
+            downloadLink = document.createElement("a");
+
+            // File name
+            downloadLink.download = filename;
+
+            // We have to create a link to the file
+            downloadLink.href = window.URL.createObjectURL(csvFile);
+
+            // Make sure that the link is not displayed
+            downloadLink.style.display = "none";
+
+            // Add the link to your DOM
+            document.body.appendChild(downloadLink);
+
+            downloadLink.click();
+        }
+
         function checksToChart() {
             let lists_labels = [];
             let lists_data = [];
@@ -50,6 +133,9 @@
             let category = getCheck();
             for (let i = 0; i < contexts.length; i++){
                 setChart(contexts[i], category, lists_labels[i], lists_data[i], chart_vars[i], getColors(lists_labels[i]));
+                document.querySelector("." + chart_vars[i]).addEventListener("click", function () {
+                    exportDataToCSV(chart_vars[i]+".csv", lists_data[i], lists_labels[i]);
+                });
             }
         }
 
@@ -108,9 +194,6 @@
                 }
             }
 
-            for (let i = 0; i < colors.length; i++){
-                console.log(colors[i])
-            }
             return colors
         }
 
