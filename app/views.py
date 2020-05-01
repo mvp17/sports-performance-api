@@ -700,5 +700,10 @@ def to_format_csv(lists_labels):
                 if ',' in label:
                     label = label.replace(',', '.')
                     new_list_labels.append(label)
+                else:
+                    new_list_labels.append(label)
+            else:
+                new_list_labels.append(label)
         new_lists_labels.append(new_list_labels)
+        new_list_labels = []
     return new_lists_labels
