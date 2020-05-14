@@ -613,8 +613,8 @@ def interpol_devices(data, csv, perf_vars, interpol_value, limit_length):
 
 def chart(request):
     objects_data = LoadData.objects.all()
-    if LoadData.objects.count() == 0:
-        messages.error(request, 'Error: No data to analyse. Please upload some csv events files.')
+    if not is_there_events_file_uploaded(objects_data):
+        messages.error(request, 'Error: No events file uploaded.')
         return render(request, 'chart.html')
     elif KeyWordEventsFile.objects.count() == 0 and is_there_events_file_uploaded(objects_data):
         messages.error(request, 'Error: No events file key words known, although there is events file uploaded.')
